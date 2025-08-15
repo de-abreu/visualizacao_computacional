@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  dash-app:
+    build:
+      context: ./seminario1     
+      dockerfile: dockerfile    
+    image: dash-notebook:latest
+    container_name: dash-notebook
+    environment:
+      NOTEBOOK: "Bubble Plot.ipynb"
+      RUN_ON_DOCKER: "1"
+    ports:
+      - "8051:8051"
+    restart: unless-stopped
+    volumes:
+      - ./seminario1:/app         
