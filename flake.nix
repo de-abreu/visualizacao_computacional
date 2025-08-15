@@ -28,9 +28,8 @@
       name = "launch-jupyter";
       runtimeInputs = dependencies;
       text = ''
-        cd ${self}              # Move to the project's working directory
-        export BROWSER=chromium # Set browser path
-        jupyter notebook        # Launch Jupyter
+        export BROWSER=chromium  # Set browser path
+        jupyter notebook ${self} # Launch Jupyter
       '';
     };
   in {
