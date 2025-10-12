@@ -1,14 +1,11 @@
 import os
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
+
 import time
-from collections import namedtuple
 import pandas as pd
 import signal
 import dill
+from utils import get_driver,recover_backup
+from selenium.webdriver.common.by import By
 
 DOCENTES_PATH = 'data/docentes.csv'
 DATA_PATH = 'data/professores.pkl' ## salva o backup
@@ -16,46 +13,15 @@ DATA_PATH = 'data/professores.pkl' ## salva o backup
 df = pd.read_csv(DOCENTES_PATH)
 print("Colunas df: ",df.columns)
 
-chrome_options = Options()
-chrome_options.add_experimental_option('prefs', {
-    # "download.default_directory": os.path.abspath(DOWNLOAD_DIR),
-    "download.prompt_for_download": False,
-    "download.directory_upgrade": True,
-    "safebrowsing.enabled": True,
-    "plugins.always_open_pdf_externally": True  # Impede que o Chrome abra PDFs no navegador
-})
-# chrome_options.add_argument("--headless")  # Modo invisível (opcional)
-chrome_options.add_argument("--no-sandbox")  # Necessário para executar como root
-chrome_options.add_argument("--disable-dev-shm-usage")  # Evita problemas de memória
-
-# Configurar o serviço do ChromeDriver
-service = Service(ChromeDriverManager().install())
-print("[Service iniciado]")
-
-
-# Iniciar o WebDriver com as opções
-driver = webdriver.Chrome(service=service, options=chrome_options)
+driver = get_driver()
 
 print("[Driver iniciado]")
 time.sleep(2)
 
 
-Pesquisa = namedtuple('Pesquisa',['nome','data','descricao'])
-professores = {} ## relaciona cada professor como nome:(listaartigos,listapesquisa)
+professores = recover_backup(DATA_PATH) ## relaciona cada professor como nome:(listaartigos,listapesquisa)
                                         # artigo = str,  pesquisa = namedtuple Pesquisa
-
-# Se o arquivo não existe, cria e salva o padrão
-if not os.path.exists(DATA_PATH):
-    print("Arquivo de backup não encontrado. Criando novo...")
-    with open(DATA_PATH, "wb") as f:
-        dill.dump(professores, f) ## inicia vazio
-
-# Carrega o conteúdo
-with open(DATA_PATH, "rb") as f:
-    professores = dill.load(f)
-print("Professores recuperados: ",list(professores.keys()))
-
-
+                                        
 ## Caso você dê ctrl+c, ele tb salva
 def on_ctrl_c(sig, frame):
     ## quando vc dá ctrl+C pra sair, ele roda e salva o bglh de professores
@@ -69,27 +35,35 @@ def on_ctrl_c(sig, frame):
 # Registra a função para o sinal SIGINT
 signal.signal(signal.SIGINT, on_ctrl_c)
 
+
+
+
+## Itera sobre o dataset de professores
 for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):    
     ## Verifica se já não foi cadastrado
     if nome in professores.keys():
         continue ## já foi cadastrado, então pula
     
     
-    
+    link_lattes = 'http://lattes.cnpq.br/5947294509160397'
     driver.get(link_lattes)
     input("Aperte enter quanado terminar de passar pelo captcha")
     print(f"{nome} ",'-'*30)
     
     
     maindiv = driver.find_elements(By.CLASS_NAME,'title-wrapper') ## lista de todos os elementos
-    div2corename = {
-        div.find_element(By.TAG_NAME,'h1').text : div
-        for div in maindiv
-    }
+    div2corename = {}
+    for div in maindiv:
+        try:
+            h1 = div.find_element(By.TAG_NAME,'h1')
+            div2corename[h1.text] = div
+        except:
+            pass
+    print("div2corename.keys()",div2corename.keys())
     
-    
+    pesquisas = [] ## lista de pesquisas
     if 'Projetos de pesquisa' not in div2corename.keys(): ## caso o prof não tenha cadastrado como produções
-        print("   Campo de projetos de pesquisa não encontrado!!")
+        print(" "*4,"Campo de projetos de pesquisa não encontrado!!")
     else:
         pesquisasdiv = div2corename['Projetos de pesquisa']
         pesquisasdiv = pesquisasdiv.find_elements(By.XPATH, "./*")[-2] ## vai até o penúltimo filho
@@ -101,7 +75,6 @@ for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):
         pesquisa_descricao = None
         step = 0 ## variável auxiliar que marca a etapa 
         
-        pesquisas = [] ## lista de pesquisas
         
         for element in pesquisasdiv:
             step+=1 ## adiciona a step
@@ -122,22 +95,19 @@ for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):
             if step == 4: ## bglh que tem a descrição
                 pesquisa_descricao = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
                 
-    
-    print("\n\n\n\n\n")
+        print(" "*4,f"{len(pesquisas)} pesquisas encontradas")
     artigos_txts = []
     if 'Produções' not in div2corename.keys():
-        print("Campo de produções não cadastrado")
+        print(" "*4,"Campo de produções não cadastrado")
     else:
         ## Etapa de pegar somente os artigos completos
         artigosdiv = driver.find_element(By.ID,'artigos-completos') ## lista o div que guarda os artigos completos
         artigos = artigosdiv.find_elements(By.CLASS_NAME, "artigo-completo") ## todos os artigos completos
         
-        # print("Artigos completos: ")
         for element in artigos:
             artigo_text = element.find_element(By.CLASS_NAME,'transform').text
             artigos_txts.append(artigo_text)
-            # print(" "*4,artigo_text)
-        # print("\n\n")
+        print(" "*4,f"{len(artigos)} artigos encontrados")
     
     
     professores[nome] = (artigos_txts,pesquisas)
