@@ -59,7 +59,6 @@ for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):
             div2corename[h1.text] = div
         except:
             pass
-    print("div2corename.keys()",div2corename.keys())
     
     pesquisas = [] ## lista de pesquisas
     if 'Projetos de pesquisa' not in div2corename.keys(): ## caso o prof não tenha cadastrado como produções
