@@ -42,7 +42,6 @@ signal.signal(signal.SIGINT, on_ctrl_c)
 ## Itera sobre o dataset de professores
 for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):    
     try:
-        link_lattes = "http://lattes.cnpq.br/4253012949721296"
         ## Verifica se já não foi cadastrado
         if nome in professores.keys():
             print(f"{nome} já está cadastrado")
