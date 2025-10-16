@@ -6,6 +6,7 @@ import signal
 import dill
 from utils import get_driver,recover_backup
 from selenium.webdriver.common.by import By
+from utils import Pesquisa
 
 DOCENTES_PATH = 'data/docentes.csv'
 DATA_PATH = 'data/professores.pkl' ## salva o backup
@@ -44,8 +45,6 @@ for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):
     if nome in professores.keys():
         continue ## já foi cadastrado, então pula
     
-    
-    link_lattes = 'http://lattes.cnpq.br/5947294509160397'
     driver.get(link_lattes)
     input("Aperte enter quanado terminar de passar pelo captcha")
     print(f"{nome} ",'-'*30)
@@ -74,15 +73,17 @@ for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):
         pesquisa_descricao = None
         step = 0 ## variável auxiliar que marca a etapa 
         
-        
         for element in pesquisasdiv:
             step+=1 ## adiciona a step
             class_name = element.tag_name ## pega a tagname
             
             if class_name == 'a':
                 if pesquisa_nome is not None:
-                    ## cadastra a pesquisa
+                    ## cadastra a pesquisa anterior e prepara pra receber uma nova
                     pesquisas.append(Pesquisa(pesquisa_nome,pesquisa_data,pesquisa_descricao))
+                    pesquisa_nome = None ## variavel auxiliar pra guardar o nome da pesquisa
+                    pesquisa_data = None
+                    pesquisa_descricao = None
                 step = 0 ## reinicia a step
             
             if step == 1: ## guarda a data
@@ -93,7 +94,9 @@ for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):
             
             if step == 4: ## bglh que tem a descrição
                 pesquisa_descricao = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
-                
+        
+        ## guarda a última pesquisa que sobrou e não passou pelo <a>
+        pesquisas.append(Pesquisa(pesquisa_nome,pesquisa_data,pesquisa_descricao))
         print(" "*4,f"{len(pesquisas)} pesquisas encontradas")
     artigos_txts = []
     if 'Produções' not in div2corename.keys():
