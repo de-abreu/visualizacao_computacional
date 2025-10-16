@@ -41,78 +41,84 @@ signal.signal(signal.SIGINT, on_ctrl_c)
 
 ## Itera sobre o dataset de professores
 for i,(idx,(nusp,nome,link,pagina,link_lattes)) in enumerate(df.iterrows()):    
-    ## Verifica se já não foi cadastrado
-    if nome in professores.keys():
-        continue ## já foi cadastrado, então pula
-    
-    driver.get(link_lattes)
-    input("Aperte enter quanado terminar de passar pelo captcha")
-    print(f"{nome} ",'-'*30)
-    
-    
-    maindiv = driver.find_elements(By.CLASS_NAME,'title-wrapper') ## lista de todos os elementos
-    div2corename = {}
-    for div in maindiv:
-        try:
-            h1 = div.find_element(By.TAG_NAME,'h1')
-            div2corename[h1.text] = div
-        except:
-            pass
-    
-    pesquisas = [] ## lista de pesquisas
-    if 'Projetos de pesquisa' not in div2corename.keys(): ## caso o prof não tenha cadastrado como produções
-        print(" "*4,"Campo de projetos de pesquisa não encontrado!!")
-    else:
-        pesquisasdiv = div2corename['Projetos de pesquisa']
-        pesquisasdiv = pesquisasdiv.find_elements(By.XPATH, "./*")[-2] ## vai até o penúltimo filho
-        pesquisasdiv = pesquisasdiv.find_elements(By.XPATH, "./*") ## pega todos os filhos dessa div
+    try:
+        link_lattes = "http://lattes.cnpq.br/4253012949721296"
+        ## Verifica se já não foi cadastrado
+        if nome in professores.keys():
+            print(f"{nome} já está cadastrado")
+            continue ## já foi cadastrado, então pula
         
-        ## itera sobre as várias pesquisas enquanto guarda as informações
-        pesquisa_nome = None ## variavel auxiliar pra guardar o nome da pesquisa
-        pesquisa_data = None
-        pesquisa_descricao = None
-        step = 0 ## variável auxiliar que marca a etapa 
+        driver.get(link_lattes)
+        input("Aperte enter quanado terminar de passar pelo captcha")
+        print(f"{nome} ",'-'*30)
         
-        for element in pesquisasdiv:
-            step+=1 ## adiciona a step
-            class_name = element.tag_name ## pega a tagname
+        
+        maindiv = driver.find_elements(By.CLASS_NAME,'title-wrapper') ## lista de todos os elementos
+        div2corename = {}
+        for div in maindiv:
+            try:
+                h1 = div.find_element(By.TAG_NAME,'h1')
+                div2corename[h1.text] = div
+            except:
+                pass
+        
+        pesquisas = [] ## lista de pesquisas
+        if 'Projetos de pesquisa' not in div2corename.keys(): ## caso o prof não tenha cadastrado como produções
+            print(" "*4,"Campo de projetos de pesquisa não encontrado!!")
+        else:
+            pesquisasdiv = div2corename['Projetos de pesquisa']
+            pesquisasdiv = pesquisasdiv.find_elements(By.XPATH, "./*")[-2] ## vai até o penúltimo filho
+            pesquisasdiv = pesquisasdiv.find_elements(By.XPATH, "./*") ## pega todos os filhos dessa div
             
-            if class_name == 'a':
-                if pesquisa_nome is not None:
-                    ## cadastra a pesquisa anterior e prepara pra receber uma nova
-                    pesquisas.append(Pesquisa(pesquisa_nome,pesquisa_data,pesquisa_descricao))
-                    pesquisa_nome = None ## variavel auxiliar pra guardar o nome da pesquisa
-                    pesquisa_data = None
-                    pesquisa_descricao = None
-                step = 0 ## reinicia a step
+            ## itera sobre as várias pesquisas enquanto guarda as informações
+            pesquisa_nome = None ## variavel auxiliar pra guardar o nome da pesquisa
+            pesquisa_data = None
+            pesquisa_descricao = None
+            step = 0 ## variável auxiliar que marca a etapa 
             
-            if step == 1: ## guarda a data
-                pesquisa_data = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
+            for element in pesquisasdiv:
+                step+=1 ## adiciona a step
+                class_name = element.tag_name ## pega a tagname
                 
-            if step == 2: ## bglh que guarda o nome da pesquisa
-                pesquisa_nome = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
+                if class_name == 'a':
+                    if pesquisa_nome is not None:
+                        ## cadastra a pesquisa anterior e prepara pra receber uma nova
+                        pesquisas.append(Pesquisa(pesquisa_nome,pesquisa_data,pesquisa_descricao))
+                        pesquisa_nome = None ## variavel auxiliar pra guardar o nome da pesquisa
+                        pesquisa_data = None
+                        pesquisa_descricao = None
+                    step = 0 ## reinicia a step
+                
+                if step == 1: ## guarda a data
+                    pesquisa_data = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
+                    
+                if step == 2: ## bglh que guarda o nome da pesquisa
+                    pesquisa_nome = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
+                
+                if step == 4: ## bglh que tem a descrição
+                    pesquisa_descricao = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
             
-            if step == 4: ## bglh que tem a descrição
-                pesquisa_descricao = element.find_element(By.XPATH,"./*").text ## pega o texto do primeiro filho
+            ## guarda a última pesquisa que sobrou e não passou pelo <a>
+            pesquisas.append(Pesquisa(pesquisa_nome,pesquisa_data,pesquisa_descricao))
+            print(" "*4,f"{len(pesquisas)} pesquisas encontradas")
+        artigos_txts = []
+        if 'Produções' not in div2corename.keys():
+            print(" "*4,"Campo de produções não cadastrado")
+        else:
+            ## Etapa de pegar somente os artigos completos
+            artigosdiv = driver.find_element(By.ID,'artigos-completos') ## lista o div que guarda os artigos completos
+            artigos = artigosdiv.find_elements(By.CLASS_NAME, "artigo-completo") ## todos os artigos completos
+            
+            for element in artigos:
+                artigo_text = element.find_element(By.CLASS_NAME,'transform').text
+                artigos_txts.append(artigo_text)
+            print(" "*4,f"{len(artigos)} artigos encontrados")
         
-        ## guarda a última pesquisa que sobrou e não passou pelo <a>
-        pesquisas.append(Pesquisa(pesquisa_nome,pesquisa_data,pesquisa_descricao))
-        print(" "*4,f"{len(pesquisas)} pesquisas encontradas")
-    artigos_txts = []
-    if 'Produções' not in div2corename.keys():
-        print(" "*4,"Campo de produções não cadastrado")
-    else:
-        ## Etapa de pegar somente os artigos completos
-        artigosdiv = driver.find_element(By.ID,'artigos-completos') ## lista o div que guarda os artigos completos
-        artigos = artigosdiv.find_elements(By.CLASS_NAME, "artigo-completo") ## todos os artigos completos
         
-        for element in artigos:
-            artigo_text = element.find_element(By.CLASS_NAME,'transform').text
-            artigos_txts.append(artigo_text)
-        print(" "*4,f"{len(artigos)} artigos encontrados")
-    
-    
-    professores[nome] = (artigos_txts,pesquisas)
+        professores[nome] = (artigos_txts,pesquisas)
+    except Exception as e:
+        print(f"Erro no professor {nome}. Erro: ",e)
+        print("\n"*5)
     
 ## salva o arquivo de professores
 with open(DATA_PATH, "wb") as f:
