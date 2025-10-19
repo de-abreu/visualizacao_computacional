@@ -13,32 +13,63 @@
     # Custom Python environment
     pythonEnv = pkgs.python3.withPackages (ps:
       with ps; [
+        # Base
+        pip
         jupyter
+        python-lsp-server
+        sqlalchemy
+
+        # Data/Viz
+        pandas
+        pandas-stubs
+        numpy
+        tqdm
+        seaborn
+        networkx
+        dash
+        gunicorn
+        plotly
         kaggle
         matplotlib
-        pandas
-        plotly
-        scikit-learn
-        seaborn
+
+        # Webscrapper
+        attrs
+        certifi
+        charset-normalizer
+        dill
+        exceptiongroup
+        h11
+        idna
+        outcome
+        packaging
+        pysocks
+        python-dateutil
+        python-dotenv
+        pytz
+        requests
+        selenium
+        six
+        sniffio
+        sortedcontainers
+        trio
+        trio-websocket
+        typing-extensions
+        tzdata
+        urllib3
+        webdriver-manager
+        websocket-client
+        wsproto
       ]);
-
-    dependencies = [pythonEnv pkgs.chromium];
-
-    runScript = pkgs.writeShellApplication {
-      name = "launch-jupyter";
-      runtimeInputs = dependencies;
-      text = ''
-        export BROWSER=chromium  # Set browser path
-        jupyter notebook ${self} # Launch Jupyter
-      '';
-    };
   in {
     # For `nix develop`
     devShells.${system}.default = pkgs.mkShell {
-      buildInputs = dependencies;
+      packages = with pkgs; [
+        pythonEnv
+        chromium
+        chromedriver
+        sqlite
+        dbeaver-bin
+      ];
     };
-
-    # For `nix run`
-    packages.${system}.default = runScript;
   };
 }

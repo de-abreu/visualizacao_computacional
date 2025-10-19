@@ -1,5 +1,4 @@
 .kaggle.json
 .ipynb_checkpoints/
-venv/
+.venv/
 **/**cache**
-*.py
