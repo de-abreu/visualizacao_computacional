@@ -70,6 +70,12 @@
         sqlite
         dbeaver-bin
       ];
+      shellHook = ''
+        python -m venv .venv
+        # shellcheck disable=SC1091
+        source .venv/bin/activate
+        pip install netgraph==4.13.2
+      '';
     };
   };
 }

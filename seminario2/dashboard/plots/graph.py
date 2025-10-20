@@ -55,3 +55,7 @@ G.add_weighted_edges_from(list(collaboration_counts.itertuples(index=False, name
 
 nx.draw_spring(G, with_labels=True)
 plt.show()
+nx.draw_circular(G, with_labels=True)
+plt.show()
+nx.draw_shell(G, with_labels=True)
+plt.show()
