@@ -29,8 +29,9 @@ class Ribbon(NamedTuple):
     fill_color: str
 
 class Connection(NamedTuple):
-    from: Ideogram
-    to: Ideogram
+    ribbon: Ribbon
+    from_ideo: Ideogram
+    to_ideo: Ideogram
     value: float | int
 
 
@@ -134,7 +135,7 @@ def calculate_connections(
     ideograms: list[Ideogram],
     radius: float,
     color_palette: list[str],
-) -> list[Ribbon]:
+) -> list[Connection]:
     """
     Calculate ribbon control points for connecting arcs in a chord diagram.
 
@@ -172,7 +173,7 @@ def calculate_connections(
     permutations = np.argsort(connection_ends_mapping, axis=1)
 
     # Calculate ribbon end positions
-    connection_ends = calculate_ribbon_ends(ribbon_ends_mapping, ideograms, permutations)
+    connection_ends = calculate_ribbon_ends(connection_ends_mapping, ideograms, permutations)
 
     # Precompute inverse permutations
     inverse_permutations = np.zeros_like(permutations)
@@ -180,12 +181,12 @@ def calculate_connections(
         for permutated_position, original_index in enumerate(permutations[row]):
             inverse_permutations[row][original_index] = permutated_position
 
-    # Create ribbon control points
-    ribbons: list[Ribbon] = []
-    n = len(ideograms)
-
-    # Check if matrix is symmetric to avoid duplicate ribbons
+    # Check if matrix is symmetric to avoid duplicate connections
     is_symmetric = np.allclose(matrix, matrix.T)
+
+    # Create ribbon control points
+    connections: list[Connection] = []
+    n = len(ideograms)
 
     for i in range(n):
         inverse_perm_i = inverse_permutations[i]
@@ -200,47 +201,51 @@ def calculate_connections(
                 continue
 
             # Get the arc for entity i's connection with j
-            arc_i = ribbon_ends[i][inverse_perm_i[j]]
+            arc_i = connection_ends[i][inverse_perm_i[j]]
 
             # Get arc for entity j's connection with i
             inverse_perm_j = inverse_permutations[j]
-            arc_j = ribbon_ends[j][inverse_perm_j[i]]
+            arc_j = connection_ends[j][inverse_perm_j[i]]
 
             # For regular connections, reverse the second arc ends to prevent twisting
             if arc_i != arc_j:
                 arc_j = Arc(arc_j.length, arc_j.end_angle, arc_j.start_angle)
 
             # Calculate the ribbon's control points and add ribbon to the list
-            ribbons.append(
-                Ribbon(
-                    top_edge=(
-                        calculate_control_points(
-                            (
-                                arc_i.start_angle,
-                                (arc_i.start_angle + arc_j.start_angle) / 2,
-                                arc_j.start_angle,
-                            ),
-                            radius,
-                        )
+            connections.append(
+                Connection(
+                    ribbon = Ribbon(
+                        top_edge=(
+                            calculate_control_points(
+                                (
+                                    arc_i.start_angle,
+                                    (arc_i.start_angle + arc_j.start_angle) / 2,
+                                    arc_j.start_angle,
+                                ),
+                                radius,
+                            )
+                        ),
+                        bottom_edge=(
+                            calculate_control_points(
+                                (
+                                    arc_i.end_angle,
+                                    (arc_i.end_angle + arc_j.end_angle) / 2,
+                                    arc_j.end_angle,
+                                ),
+                                radius,
+                            )
+                        ),
+                        from_arc=arc_i,
+                        to_arc=arc_j,
+                        fill_color=assign_color(matrix[i, j], max_sum, color_palette),
                     ),
-                    bottom_edge=(
-                        calculate_control_points(
-                            (
-                                arc_i.end_angle,
-                                (arc_i.end_angle + arc_j.end_angle) / 2,
-                                arc_j.end_angle,
-                            ),
-                            radius,
-                        )
-                    ),
-                    from_arc=arc_i,
-                    to_arc=arc_j,
-                    value=matrix[i, j],
-                    fill_color=assign_color(matrix[i, j], max_sum, color_palette),
+                    from_ideo= ideograms[i],
+                    to_ideo = ideograms[j],
+                    value = matrix[i][j]
                 )
-            )
 
-    return ribbons
+            )
+    return connections
 
 
 def bezier_curve(control_points: tuple[Point, ...]) -> str:
@@ -283,45 +288,8 @@ def bezier_curve(control_points: tuple[Point, ...]) -> str:
     )
 
 
-def circular_arc(start_angle: float, end_angle: float, radius: float = 1.0) -> str:
-    """
-    Generate an SVG path string for a circular arc.
-
-    Parameters
-    ----------
-    start_angle : float
-        The starting angle of the arc in radians.
-    end_angle : float
-        The ending angle of the arc in radians.
-    radius : float
-        The radius of the arc.
-
-    Returns
-    -------
-    str
-        SVG path string containing a series of 'L x,y' commands that approximate
-        the circular arc between the start and end angles.
-    """
-    # Calculate number of segments for smooth arc approximation
-    arc_length = abs(end_angle - start_angle)
-    num_segments = max(3, int(40 * arc_length / np.pi))
-
-    # Generate points along the arc
-    angle_samples = np.linspace(start_angle, end_angle, num_segments)
-    arc_points = radius * np.exp(1j * angle_samples)  # Convert to complex coordinates
-
-    # Build SVG path string with line-to commands
-    svg_path_commands = ""
-    for point_index in range(len(angle_samples)):
-        svg_path_commands += (
-            f"L {arc_points.real[point_index]}, {arc_points.imag[point_index]} "
-        )
-
-    return svg_path_commands
-
-
-def make_ribbon_shape(
-    ribbon: Ribbon,
+def make_connection_shape(
+    ribbon: Ribbon
     radius: float,
     line_color: str = "rgb(175,175,175)",
 ) -> ShapeStyle:
@@ -346,6 +314,7 @@ def make_ribbon_shape(
     ShapeStyle
         Plotly shape configuration for the ribbon
     """
+
     # Get control points for both edges of the ribbon
     control_points = ctrl_rib_chords(start_arc_ends, destination_arc_ends, radius)
 

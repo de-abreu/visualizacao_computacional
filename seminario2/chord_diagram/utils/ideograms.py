@@ -35,6 +35,8 @@ def calculate_ideograms(
         for i in range(len(arcs))
     ]
 
+def make_ideogram_shape
+
 
 def create_ideograms(
     ideograms: list[Ideogram],
@@ -119,7 +121,7 @@ def create_ideograms(
     shapes: list[ShapeStyle] = []
     hovers: list[Scatter] = []
 
-    for i, ideo in enumerate(ideograms):
+    for ideo in ideograms:
         # Generate coordinates for outer and inner arcs
         inner_arc_coords = arc_coordinates(inner_radius, ideo.arc, num_points)
         outer_arc_coords = arc_coordinates(
