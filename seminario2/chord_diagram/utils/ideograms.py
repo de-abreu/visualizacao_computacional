@@ -35,14 +35,12 @@ def calculate_ideograms(
         for i in range(len(arcs))
     ]
 
-def make_ideogram_shape
-
 
 def create_ideograms(
     ideograms: list[Ideogram],
     num_points: int,
     text_template: str,
-    inner_radius: float = 1.0,
+    inner_radius: float,
     ideogram_width: float = 0.1,
 ) -> tuple[list[ShapeStyle], list[Scatter]]:
     """
@@ -145,7 +143,7 @@ def create_ideograms(
             svg_path += f"{arc_coords.real}, {arc_coords.imag} L "
 
         # Close the path by returning to the starting point
-        svg_path += f"{outer_arc_coords[0].real}, {outer_arc_coords[0].imag}"
+        svg_path += f"{outer_arc_coords.real}, {outer_arc_coords.imag}"
 
         shapes.append(create_shape(svg_path, ideo.fill_color))
         hovers.append(

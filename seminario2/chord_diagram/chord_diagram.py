@@ -8,12 +8,15 @@ represents the strength of connections between nodes.
 
 import numpy as np
 import numpy.typing as npt
-import plotly.graph_objects as go
+import re
 
-from chord_diagram.utils.ideograms import calculate_ideograms, create_ideograms
+from plotly.graph_objects import Figure
 
+from .utils.arcs import CIRC
+from .utils.connections import calculate_connections, create_connections
+from .utils.ideograms import calculate_ideograms, create_ideograms
+from .utils.layout import create_layout
 from .utils.spectral_ordering import spectral_order
-from .utils.arcs import CIRC, calculate_arcs, create_arcs
 
 
 def chord_diagram(
@@ -23,10 +26,10 @@ def chord_diagram(
     gap_fraction: float = 0.0,
     color_palette: list[str] | None = None,
     arc_hover_template: str = "{label}:<br>{total} connections",
-    ribbon_hover_template: str = "{origin} → {destination}: {value}",
+    connection_hover_template: str = "{origin} → {destination}: {value}",
     size: int = 600,
     num_points: int = 50,
-) -> go.Figure:
+) -> Figure:
     """
     Create an interactive chord diagram visualization.
 
@@ -122,12 +125,31 @@ def chord_diagram(
             f"Total gap space {total_gap} exceeds available circle space {CIRC}"
         )
 
+    # Validate color palette
+    if not color_palette:
+        color_palette = [
+            "#003f5c",
+            "#2f4b7c",
+            "#665191",
+            "#a05195",
+            "#d45087",
+            "#f95d6a",
+            "#ff7c43",
+            "#ffa600",
+        ]
+    else:
+        hex_pattern = r"^#[0-9A-Fa-f]{6}$"
+        for color in color_palette:
+            if not re.match(hex_pattern, color):
+                raise ValueError(f"Invalid hexadecimal color: '{color}'. ")
+
     # If dataset is empty (all row sums are zero) return an empty plot with the
     # "Dataset is empty" message
     row_sums = np.atleast_1d(np.sum(matrix, axis=1, dtype=np.float64))
+    np.set_printoptions(threshold=np.inf)
     hide = {"showgrid": False, "zeroline": False, "showticklabels": False, "title": ""}
     if np.sum(row_sums) == 0:
-        fig = go.Figure()
+        fig = Figure()
         _ = fig.add_annotation(
             text="Dataset is empty",
             xref="paper",
@@ -149,62 +171,28 @@ def chord_diagram(
         )
         return fig
 
-    # Set default color palette if not provided
-    if not color_palette:
-        color_palette = [
-            "#003f5c",
-            "#2f4b7c",
-            "#665191",
-            "#a05195",
-            "#d45087",
-            "#f95d6a",
-            "#ff7c43",
-            "#ffa600",
-        ]
-
     # Reorder the matrix so as to minimize ribbon crossover
     matrix, labels = spectral_order(matrix, labels)
+    radius = 1.0
 
-    # Calculate the arcs' geometry and colors from the data, store their shape
-    # and hover data
-    ideograms = calculate_ideograms(row_sums, gap_size, color_palette)
+    # Store the ideograms' data (its, geometry, color and values) into an
+    # Ideogram object
+    ideograms = calculate_ideograms(row_sums, labels, gap_size, color_palette)
+
+    # Genearate Ploty shapes and hovers from the Ideogram data.
     ideo_shapes, ideo_hovers = create_ideograms(
-        ideograms,
-        labels,
-        num_points,
-        arc_hover_template,
+        ideograms, num_points, arc_hover_template, radius
     )
 
-    # TODO: Continue implementing the core chord diagram logic here
-    # This will include:
-    # 3. Generating ribbons between arcs based on matrix values
-    # 4. Setting up hover interactions
-    # 5. Creating the final Plotly figure
-
-    # Placeholder implementation - to be replaced with actual chord diagram logic
-    fig = go.Figure()
-
-    # Add a simple message indicating this is a skeleton
-    fig.add_annotation(
-        text="Chord Diagram Skeleton - Implementation in Progress",
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
-        xanchor="center",
-        yanchor="middle",
-        showarrow=False,
-        font={"size": 16},
+    # Repeat the same procedure for the connections (represented by ribbons)
+    connections = calculate_connections(
+        matrix, row_sums, ideograms, radius, color_palette
+    )
+    conn_shapes, conn_hovers = create_connections(
+        connections, num_points, connection_hover_template, radius
     )
 
-    # Set layout properties
-    fig.update_layout(
-        title="Chord Diagram",
-        showlegend=False,
-        xaxis=hide,
-        yaxis=hide,
-        width=size,
-        height=size,
+    return Figure(
+        layout=create_layout(title, size, ideo_shapes + conn_shapes),
+        data=ideo_hovers + conn_hovers,
     )
-
-    return fig

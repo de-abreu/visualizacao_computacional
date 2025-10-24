@@ -12,6 +12,7 @@ from plotly.graph_objects import Scatter
 from .shapes import ShapeStyle, assign_color, create_hover, create_shape
 from .ideograms import Ideogram
 from .arcs import Arc, arc_coordinates
+from .colors import hex_to_rgba
 
 
 class Point(NamedTuple):
@@ -20,13 +21,12 @@ class Point(NamedTuple):
 
 
 class Ribbon(NamedTuple):
-    """Represents a ribbon segment."""
-
     top_edge: tuple[Point, ...]  # Control points for top edge
     bottom_edge: tuple[Point, ...]  # Control points for bottom edge
     from_arc: Arc
     to_arc: Arc
     fill_color: str
+
 
 class Connection(NamedTuple):
     ribbon: Ribbon
@@ -93,7 +93,7 @@ def calculate_ribbon_ends(
             col += 1
 
         # Then all arcs with a length is added from the shortest to the greatest
-        while col < ideogram_count:
+        for col in range(col, ideogram_count):
             arc_length = mapped_data[row][permutations[row][col]]
             end_angle = start_angle + arc_length
             ideo_ribbons_ends.append(Arc(arc_length, start_angle, end_angle))
@@ -123,7 +123,7 @@ def calculate_control_points(
         List of Point objects for the control points
     """
 
-    b_cplx = np.array([np.exp(1j * angles[i]) for i in range(3)], dtype=np.float64)
+    b_cplx = np.array([np.exp(1j * angles[i]) for i in range(3)], dtype=np.complex128)
     b_cplx[1] *= radius
 
     return tuple(Point(x, y) for x, y in zip(b_cplx.real, b_cplx.imag))
@@ -173,7 +173,9 @@ def calculate_connections(
     permutations = np.argsort(connection_ends_mapping, axis=1)
 
     # Calculate ribbon end positions
-    connection_ends = calculate_ribbon_ends(connection_ends_mapping, ideograms, permutations)
+    connection_ends = calculate_ribbon_ends(
+        connection_ends_mapping, ideograms, permutations
+    )
 
     # Precompute inverse permutations
     inverse_permutations = np.zeros_like(permutations)
@@ -193,9 +195,7 @@ def calculate_connections(
 
         # If matrix is symmetric, only iterate over upper triangle (including diagonal)
         # Otherwise, iterate over all elements
-        j_range = range(i, n) if is_symmetric else range(n)
-
-        for j in j_range:
+        for j in range(i, n) if is_symmetric else range(n):
             # Skip when there's no connection
             if matrix[i, j] == 0:
                 continue
@@ -214,7 +214,7 @@ def calculate_connections(
             # Calculate the ribbon's control points and add ribbon to the list
             connections.append(
                 Connection(
-                    ribbon = Ribbon(
+                    ribbon=Ribbon(
                         top_edge=(
                             calculate_control_points(
                                 (
@@ -239,11 +239,10 @@ def calculate_connections(
                         to_arc=arc_j,
                         fill_color=assign_color(matrix[i, j], max_sum, color_palette),
                     ),
-                    from_ideo= ideograms[i],
-                    to_ideo = ideograms[j],
-                    value = matrix[i][j]
+                    from_ideo=ideograms[i],
+                    to_ideo=ideograms[j],
+                    value=matrix[i][j],
                 )
-
             )
     return connections
 
@@ -288,153 +287,11 @@ def bezier_curve(control_points: tuple[Point, ...]) -> str:
     )
 
 
-def make_connection_shape(
-    ribbon: Ribbon
-    radius: float,
-    line_color: str = "rgb(175,175,175)",
-) -> ShapeStyle:
-    """
-    Create a ribbon shape between two circular arcs.
-
-    Parameters
-    ----------
-    start_arc_ends : Tuple[float, float]
-        Angular coordinates (start, end) for the starting arc segment
-    destination_arc_ends : Tuple[float, float]
-        Angular coordinates (start, end) for the destination arc segment
-    line_color : str
-        Color of the ribbon boundary
-    fill_color : str
-        Fill color for the ribbon interior
-    radius : float
-        Radius for Bezier control points (controls curvature)
-
-    Returns
-    -------
-    ShapeStyle
-        Plotly shape configuration for the ribbon
-    """
-
-    # Get control points for both edges of the ribbon
-    control_points = ctrl_rib_chords(start_arc_ends, destination_arc_ends, radius)
-
-    # Construct the closed path in clockwise order:
-    svg_path = (
-        # Top edge: start to destination
-        bezier_curve(control_points.top_edge)
-        +
-        # Destination side: top to bottom
-        circular_arc(destination_arc_ends[0], destination_arc_ends[1])
-        +
-        # Bottom edge: destination to start (reversed)
-        bezier_curve(control_points.bottom_edge[::-1])
-        +
-        # Start side: bottom to top
-        circular_arc(start_arc_ends[1], start_arc_ends[0])
-    )
-
-    return create_shape(svg_path, fill_color, line_color=line_color, line_width=0.5)
-
-
-def make_self_relation_ribbon_shape(
-    arc_ends: Tuple[float, float],
-    line_color: str = "rgb(175,175,175)",
-    fill_color: str = "rgba(200,200,200,0.5)",
-    radius: float = 0.3,
-) -> ShapeStyle:
-    """
-    Create a self-relation ribbon that loops from an arc back to itself.
-
-    Parameters
-    ----------
-    arc_ends : Tuple[float, float]
-        Angular coordinates (start, end) for the arc
-    line_color : str
-        Color of the ribbon boundary
-    fill_color : str
-        Fill color for the ribbon interior
-    radius : float
-        Radius for Bezier control points
-
-    Returns
-    -------
-    ShapeStyle
-        Plotly shape configuration for the self-relation ribbon
-    """
-    # For self-relations, we create a single Bezier curve from start to end
-    # and then complete the loop with the arc
-    control_points = control_pts(
-        [arc_ends[0], (arc_ends[0] + arc_ends[1]) / 2, arc_ends[1]], radius
-    )
-
-    # Construct path: Bezier curve + return arc
-    svg_path = (
-        bezier_curve(control_points)
-        + circular_arc(arc_ends[1], arc_ends[0])  # Arc completing the loop
-    )
-
-    return create_shape(svg_path, fill_color, line_color=line_color, line_width=0.5)
-
-
-def create_ribbon_hover(
-    start_arc_ends: Tuple[float, float],
-    destination_arc_ends: Tuple[float, float],
-    origin_label: str,
-    destination_label: str,
-    value: int,
-    fill_color: str,
-    hover_template: str = "{origin} → {destination}: {value}",
-    radius: float = 0.9,
-) -> Scatter:
-    """
-    Create hover data for a ribbon.
-
-    Parameters
-    ----------
-    start_arc_ends : Tuple[float, float]
-        Angular coordinates for the starting arc
-    destination_arc_ends : Tuple[float, float]
-        Angular coordinates for the destination arc
-    origin_label : str
-        Label for the origin entity
-    destination_label : str
-        Label for the destination entity
-    value : int
-        Value/weight of the connection
-    fill_color : str
-        Color for the hover marker
-    hover_template : str
-        Template string for hover text
-    radius : float
-        Radius for hover position calculation
-
-    Returns
-    -------
-    Scatter
-        Plotly scatter object for hover interactions
-    """
-    # Calculate position for hover text (midpoint between the two arcs)
-    start_midpoint = (start_arc_ends[0] + start_arc_ends[1]) / 2
-    dest_midpoint = (destination_arc_ends[0] + destination_arc_ends[1]) / 2
-    hover_angle = (start_midpoint + dest_midpoint) / 2
-    hover_position = radius * np.exp(1j * hover_angle)
-
-    # Create hover text using template
-    hover_text = hover_template.format(
-        origin=origin_label, destination=destination_label, value=value
-    )
-
-    return create_hover(
-        np.real(hover_position), np.imag(hover_position), hover_text, fill_color
-    )
-
-
-def create_ribbons(
-    ribbons: list[Ribbon],
-    labels: list[str],
+def create_connections(
+    connections: list[Connection],
+    num_points: int,
     text_template: str,
     radius: float,
-    num_points: int
 ) -> tuple[list[ShapeStyle], list[Scatter]]:
     """
     Create all ribbon shapes and hover data from pre-calculated ribbon control points.
@@ -464,13 +321,10 @@ def create_ribbons(
     shapes: list[ShapeStyle] = []
     hovers: list[Scatter] = []
 
-    for ribbon in ribbons:
-        from_arc_coordinates = arc_coordinates(
-            radius, ribbon.from_arc, num_points
-        )
-        to_arc_coordinates = arc_coordinates(
-            radius, ribbon.to_arc, num_points
-        )
+    for connection in connections:
+        ribbon = connection.ribbon
+        from_arc_coords = arc_coordinates(radius, ribbon.from_arc, num_points)
+        to_arc_coords = arc_coordinates(radius, ribbon.to_arc, num_points)
 
         # Create SVG path for the ribbon using the control points
         # The ribbon consists of two Bezier curves (top and bottom edges)
@@ -480,21 +334,41 @@ def create_ribbons(
             bezier_curve(ribbon.top_edge)
             +
             # Circular arc along the end arc (from end of top edge to start of bottom edge)
-            f"L {to_arc_coordinates.real}, {to_arc_coordinates.imag}"
+            f"L {to_arc_coords.real}, {to_arc_coords.imag}"
             +
             # Bottom edge Bezier curve (reversed to create closed shape)
             bezier_curve(ribbon.bottom_edge[::-1])
             +
             # Circular arc along the start arc (from end of bottom edge back to start of top edge)
-            f"L {from_arc_coordinates.real}, {from_arc_coordinates.imag}"
+            f"L {from_arc_coords.real}, {from_arc_coords.imag}"
         )
 
+        transparent_fill = hex_to_rgba(ribbon.fill_color, 0.75)
         # Create the ribbon shape
-        shapes.append(
-            create_shape(
-                svg_path, fill_color, line_color=line_color, line_width=line_width
-            )
-        )
+        shapes.append(create_shape(svg_path, transparent_fill))
+        from_ideo = connection.from_ideo
+        to_ideo = connection.to_ideo
+        hovers += [
+            create_hover(
+                from_arc_coords.real,
+                from_arc_coords.imag,
+                text_template.format(
+                    origin=from_ideo.label,
+                    destination=to_ideo.label,
+                    value=connection.value,
+                ),
+                ribbon.fill_color,
+            ),
+            create_hover(
+                to_arc_coords.real,
+                to_arc_coords.imag,
+                text_template.format(
+                    origin=to_ideo.label,
+                    destination=from_ideo.label,
+                    value=connection.value,
+                ),
+                ribbon.fill_color,
+            ),
+        ]
 
-
-    return ribbon_shapes, ribbon_hovers
+    return shapes, hovers
