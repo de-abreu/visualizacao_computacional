@@ -1,81 +1,94 @@
 {
-  description = "Data visualization development environment";
+  inputs = {
+    nixpkgs.url = "github:cachix/devenv-nixpkgs/rolling";
+    devenv.url = "github:cachix/devenv";
+  };
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+  nixConfig = {
+    extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
+    extra-substituters = "https://devenv.cachix.org";
+  };
 
   outputs = {
     self,
     nixpkgs,
-  }: let
+    devenv,
+    ...
+  } @ inputs: let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
+    requirements = ''
+      # Base
+      jupyter==1.1.1
+      ipykernel==6.30.1
+      python-lsp-server[all]==1.13.1
+      sqlalchemy==2.0.44
 
-    # Custom Python environment
-    pythonEnv = pkgs.python3.withPackages (ps:
-      with ps; [
-        # Base
-        pip
-        jupyter
-        python-lsp-server
-        sqlalchemy
+      # Data/Viz
+      dash==3.2.0
+      gunicorn==23.0.0
+      kaggle==1.7.4.5
+      matplotlib==3.9.4
+      networkx==3.2.1
+      netgraph==4.13.2
+      pandas-stubs==2.2.2.240807
+      seaborn==0.13.2
+      tqdm==4.67.1
+      chart-studio==1.1.0
+      pyCirclizely==1.0.3
+      plotly-stubs==0.0.6
 
-        # Data/Viz
-        pandas
-        pandas-stubs
-        numpy
-        tqdm
-        seaborn
-        networkx
-        dash
-        gunicorn
-        plotly
-        kaggle
-        matplotlib
-
-        # Webscrapper
-        attrs
-        certifi
-        charset-normalizer
-        dill
-        exceptiongroup
-        h11
-        idna
-        outcome
-        packaging
-        pysocks
-        python-dateutil
-        python-dotenv
-        pytz
-        requests
-        selenium
-        six
-        sniffio
-        sortedcontainers
-        trio
-        trio-websocket
-        typing-extensions
-        tzdata
-        urllib3
-        webdriver-manager
-        websocket-client
-        wsproto
-      ]);
+      # Webscrapper
+      attrs==25.4.0
+      certifi==2025.10.5
+      charset-normalizer==3.4.3
+      dill==0.4.0
+      exceptiongroup==1.3.0
+      h11==0.16.0
+      idna==3.10
+      outcome==1.3.0.post0
+      packaging==25.0
+      PySocks==1.7.1
+      python-dateutil==2.9.0.post0
+      python-dotenv==1.1.1
+      pytz==2025.2
+      requests==2.32.5
+      selenium==4.36.0
+      six==1.17.0
+      sniffio==1.3.1
+      sortedcontainers==2.4.0
+      trio==0.31.0
+      trio-websocket==0.12.2
+      typing_extensions==4.15.0
+      tzdata==2025.2
+      urllib3==2.5.0
+      webdriver-manager==4.0.2
+      websocket-client==1.9.0
+      wsproto==1.2.0
+    '';
   in {
-    # For `nix develop`
-    devShells.${system}.default = pkgs.mkShell {
-      packages = with pkgs; [
-        pythonEnv
-        chromium
-        chromedriver
-        sqlite
-        dbeaver-bin
+    devShells.${system}.default = devenv.lib.mkShell {
+      inherit inputs pkgs;
+      modules = [
+        ({pkgs, ...}: {
+          packages = with pkgs; [
+            chromedriver
+            chromium
+            dbeaver-bin
+            sqlite
+            zlib
+          ];
+
+          languages.python = {
+            enable = true;
+
+            venv = {
+              enable = true;
+              requirements = requirements;
+            };
+          };
+        })
       ];
-      shellHook = ''
-        python -m venv .venv
-        # shellcheck disable=SC1091
-        source .venv/bin/activate
-        pip install netgraph==4.13.2
-      '';
     };
   };
 }
