@@ -3,15 +3,14 @@ from sqlalchemy import create_engine
 import numpy as np
 import pandas as pd
 
-from arc_diagram.arc_diagram import arc_diagram
+from arc_diagram.arc_diagram_dash import create_arc_diagram_dash
 
 
 def main():
     """
-    Main function for testing the chord_diagram function.
+    Main function for testing the interactive arc diagram with Dash.
 
-    This script serves as a test harness for the chord_diagram visualization.
-    Add test cases here to verify the functionality of the chord diagram module.
+    This script serves as a test harness for the interactive arc diagram visualization.
     """
 
     engine = create_engine("sqlite:///database/lattes.db")
@@ -87,15 +86,15 @@ def main():
         j = researcher_to_index[row["researcher_2"]]
         collaboration_matrix[i, j] = collaboration_matrix[j, i] = row["collaborations"]
 
-    fig = arc_diagram(
-        collaboration_matrix,
+    # Create and run the Dash app with interactive hover filtering
+    app = create_arc_diagram_dash(
+        matrix=collaboration_matrix,
         title="Colaborações entre Professores do ICMC, em artigos e projetos de pesquisa",
         labels=researchers,
-        size=800,
     )
 
-    # Display the figure in a browser window
-    fig.show()
+    # Run the Dash app
+    app.run(debug=True, host="127.0.0.1", port=8050)
 
 
 if __name__ == "__main__":

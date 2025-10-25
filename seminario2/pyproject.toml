@@ -1,2 +1,2 @@
 [tool.setuptools.packages.find]
-where = ["utils"]  # Set the root directory to 'app'
+where = ["arc_diagram"]  # Set the root directory to 'app'

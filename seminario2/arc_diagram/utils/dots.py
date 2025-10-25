@@ -26,7 +26,7 @@ class Dots:
         ).astype(np.int32)
 
         # Centralize dots along the y axis and spread evenly along the x axis
-        self.y_position: float = 0.5
+        self.y_position: float = 0.3
         x_positions = []
         current_x = margins
 
@@ -39,7 +39,7 @@ class Dots:
         self.x_positions: list[float] = [x / self.total_width for x in x_positions]
 
         self.colors: list[str] = [
-            hex_to_rgba(assign_color(self.radii[i], max_radius, color_palette), 0.75)
+            assign_color(self.radii[i], max_radius, color_palette)
             for i in range(self.count)
         ]
 
@@ -91,7 +91,7 @@ class Dots:
                     mode="markers",
                     marker={
                         "size": legend_size,  # Use gradual size progression
-                        "color": hex_to_rgba(color, 0.75),
+                        "color": color,
                         "line": {"width": 2, "color": "white"},
                     },
                     name=f"Connections: {range_text}",
