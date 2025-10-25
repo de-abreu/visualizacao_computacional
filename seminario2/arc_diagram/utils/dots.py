@@ -42,17 +42,17 @@ class Dots:
             for i in range(self.count)
         ]
 
-    def add_legend(self, fig: Figure, legend_title: str) -> dict:
+    def add_legend(self, fig: Figure, legend_title: str) -> dict[str, str | float]:
         """Update the figure layout with proper sizing and legend"""
+
         # Create color range legend
         # Calculate the connection value ranges for each color in the palette
         num_colors = len(self.color_palette)
         min_connections = np.min(self.values)
         max_connections = np.max(self.values)
 
-        # Calculate the connection value ranges and median values for each color
+        # Calculate the connection value ranges for each color
         ranges: list[str] = []
-        medians: list[int] = []
 
         for i in range(num_colors):
             lower_bound = (
@@ -63,25 +63,25 @@ class Dots:
                 + (max_connections - min_connections) * (i + 1) / num_colors
             )
 
-            # Calculate median value for this range
-            medians.append(round((lower_bound + upper_bound) / 2))
             range_text = f"{lower_bound:.0f} - {upper_bound:.0f}"
             ranges.append(range_text)
 
-        # Calculate radii for median values using the same scaling as main circles
-        legend_radii: list[int] = []
-        min_radius = self.radii.min()
-        max_radius = self.radii.max()
-        for median in medians:
-            # Scale radius proportionally to median value
-            legend_radius = min_radius + (median - min_connections) / (
-                max_connections - min_connections
-            ) * (max_radius - min_radius)
-            legend_radii.append(int(legend_radius))
+        # Create gradual size progression for legend dots
+        # Use simple linear progression from smallest to largest
+        min_legend_size = 4  # Smallest legend dot size
+        max_legend_size = 20  # Largest legend dot size
 
-        # Add legend entries for each color range with proportional sizes
-        for color, range_text, legend_radius in zip(
-            self.color_palette, ranges, legend_radii
+        legend_sizes = []
+        for i in range(num_colors):
+            # Linear progression from min to max
+            size = min_legend_size + (max_legend_size - min_legend_size) * i / (
+                num_colors - 1
+            )
+            legend_sizes.append(int(size))
+
+        # Add legend entries for each color range with gradual size progression
+        for color, range_text, legend_size in zip(
+            self.color_palette, ranges, legend_sizes
         ):
             fig.add_trace(
                 Scatter(
@@ -89,7 +89,7 @@ class Dots:
                     y=[None],
                     mode="markers",
                     marker={
-                        "size": legend_radius,  # Use proportional size based on median value
+                        "size": legend_size,  # Use gradual size progression
                         "color": hex_to_rgba(color, 0.75),
                         "line": {"width": 2, "color": "white"},
                     },

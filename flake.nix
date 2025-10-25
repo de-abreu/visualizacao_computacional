@@ -25,7 +25,6 @@
       sqlalchemy==2.0.44
 
       # Data/Viz
-      altair==5.5.0
       dash==3.2.0
       gunicorn==23.0.0
       kaggle==1.7.4.5
