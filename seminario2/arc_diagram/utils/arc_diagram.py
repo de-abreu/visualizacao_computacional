@@ -88,17 +88,18 @@ def arc_diagram(
             color = f"rgba(100, 100, 100, {0.3 + color_intensity * 0.4})"  # Gray with varying opacity
 
             # Add the arc trace
-            fig.add_trace(
+            _ = fig.add_trace(
                 Scatter(
                     x=x_points,
                     y=y_points,
                     mode="lines",
-                    line=dict(
-                        width=line_width,
-                        color=color,
-                    ),
+                    line={
+                        "width": line_width,
+                        "color": color,
+                    },
                     hoverinfo="skip",  # Don't show hover for arcs
                     showlegend=False,
+                    customdata=[[i, j]],  # Store which dots this arc connects
                 )
             )
 

@@ -55,6 +55,36 @@ def create_arc_diagram_dash(
     matrix_list = matrix.tolist()
     n = matrix.shape[0]
 
+    # Store the original figure for opacity restoration
+    original_fig = go.Figure(fig)
+
+    # Pre-compute which traces are dots vs arcs
+    dot_traces_indices = []
+    arc_traces_indices = []
+    legend_traces_indices = []
+
+    for i, trace in enumerate(fig.data):
+        # Check if this is a main graph dot (mode='markers', customdata is integer, showlegend=False)
+        if (getattr(trace, 'mode', None) == 'markers' and
+            hasattr(trace, 'customdata') and trace.customdata is not None and
+            isinstance(trace.customdata, tuple) and len(trace.customdata) == 1 and
+            isinstance(trace.customdata[0], int) and
+            getattr(trace, 'showlegend', True) == False):
+            # This is a main graph dot
+            dot_traces_indices.append(i)
+        # Check if this is an arc (mode='lines', customdata is list of two integers)
+        elif (getattr(trace, 'mode', None) == 'lines' and
+              hasattr(trace, 'customdata') and trace.customdata is not None and
+              isinstance(trace.customdata, tuple) and len(trace.customdata) == 1 and
+              isinstance(trace.customdata[0], list) and len(trace.customdata[0]) == 2):
+            # This is an arc
+            arc_traces_indices.append(i)
+        # Check if this is a legend trace (showlegend=True)
+        elif getattr(trace, 'showlegend', False):
+            legend_traces_indices.append(i)
+
+    print(f"DEBUG: Pre-computed {len(dot_traces_indices)} dot traces, {len(arc_traces_indices)} arc traces, and {len(legend_traces_indices)} legend traces")
+
     # Create the Dash app
     app = dash.Dash(__name__)
 
@@ -68,8 +98,8 @@ def create_arc_diagram_dash(
     @app.callback(Output("arc-diagram", "figure"), Input("arc-diagram", "hoverData"))
     def update_opacity_on_hover(hover_data):
         """
-        Update dot opacity based on hover interactions.
-        When hovering over a dot, reduce opacity of unrelated dots to 10%.
+        Update dot and arc opacity based on hover interactions.
+        When hovering over a dot, reduce opacity of unrelated dots and arcs to 10%.
         """
         print(f"DEBUG: Hover data received: {hover_data}")  # Debug logging
 
@@ -78,12 +108,9 @@ def create_arc_diagram_dash(
 
         # If no hover data, return the original figure with full opacity
         if hover_data is None:
-            print("DEBUG: No hover data, resetting all dots to full opacity")
-            # Reset all dots to full opacity
-            updated_fig = go.Figure(fig)
-            for i in range(n):
-                updated_fig.data[i].marker.opacity = 1.0
-            return updated_fig
+            print("DEBUG: No hover data, resetting all elements to full opacity")
+            # Return the original figure (which has the correct initial opacities)
+            return go.Figure(original_fig)
 
         # Get the hovered dot index from customdata
         try:
@@ -92,11 +119,8 @@ def create_arc_diagram_dash(
             print(f"DEBUG: Hovered index: {hovered_index}")
         except (KeyError, IndexError, TypeError) as e:
             print(f"DEBUG: Error getting customdata: {e}")
-            # Reset all dots to full opacity
-            updated_fig = go.Figure(fig)
-            for i in range(n):
-                updated_fig.data[i].marker.opacity = 1.0
-            return updated_fig
+            # Reset all elements to full opacity by returning the original figure
+            return go.Figure(original_fig)
 
         # Only process hover events from main graph dots (not legend dots)
         # Main graph dots have customdata, legend dots don't
@@ -116,19 +140,67 @@ def create_arc_diagram_dash(
         # Create updated figure with modified opacity
         updated_fig = go.Figure(fig)
 
-        # Update opacity for all main graph traces (first n traces)
-        for i in range(n):
-            if i == hovered_index:
+        # Use pre-computed trace indices instead of re-detecting
+        dot_traces = dot_traces_indices
+        arc_traces = arc_traces_indices
+
+        print(f"DEBUG: Using pre-computed {len(dot_traces)} dot traces and {len(arc_traces)} arc traces")
+
+        # Update opacity for dots
+        for trace_idx in dot_traces:
+            trace = updated_fig.data[trace_idx]
+            dot_index = trace.customdata[0]  # Extract the integer from the tuple
+
+            if dot_index == hovered_index:
                 # Keep hovered dot at full opacity
-                updated_fig.data[i].marker.opacity = 1.0
-            elif i in related_indices:
+                trace.marker.opacity = 1.0
+            elif dot_index in related_indices:
                 # Keep related dots at full opacity
-                updated_fig.data[i].marker.opacity = 1.0
+                trace.marker.opacity = 1.0
             else:
                 # Reduce unrelated dots to 10% opacity
-                updated_fig.data[i].marker.opacity = 0.1
+                trace.marker.opacity = 0.1
 
-        print(f"DEBUG: Updated opacity for {n} main graph dots")
+        # Update opacity for arcs
+        for trace_idx in arc_traces:
+            trace = updated_fig.data[trace_idx]
+            # Check if this arc connects to the hovered dot
+            if trace.customdata is not None:
+                connected_dots = trace.customdata[0]  # [i, j] array
+                if hovered_index in connected_dots:
+                    # Keep related arcs at full opacity - extract color and set to full opacity
+                    if hasattr(trace.line, 'color'):
+                        # Parse existing color and set to full opacity
+                        color = trace.line.color
+                        if color.startswith('rgba('):
+                            # Extract RGB values and set alpha to 1.0
+                            rgb_values = color[5:-1].split(',')[:3]
+                            trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)'
+                        else:
+                            # Convert to RGBA with full opacity
+                            trace.line.color = f'rgba({color},1.0)'
+                else:
+                    # Reduce unrelated arcs to 10% opacity
+                    if hasattr(trace.line, 'color'):
+                        color = trace.line.color
+                        if color.startswith('rgba('):
+                            # Extract RGB values and set alpha to 0.1
+                            rgb_values = color[5:-1].split(',')[:3]
+                            trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},0.1)'
+                        else:
+                            # Convert to RGBA with low opacity
+                            trace.line.color = f'rgba({color},0.1)'
+            else:
+                # If no customdata, keep at full opacity
+                if hasattr(trace.line, 'color'):
+                    color = trace.line.color
+                    if color.startswith('rgba('):
+                        rgb_values = color[5:-1].split(',')[:3]
+                        trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)'
+                    else:
+                        trace.line.color = f'rgba({color},1.0)'
+
+        print(f"DEBUG: Updated opacity for {len(dot_traces)} dots and {len(arc_traces)} arcs")
         return updated_fig
 
     @app.callback(Output("hover-info", "children"), Input("arc-diagram", "hoverData"))
