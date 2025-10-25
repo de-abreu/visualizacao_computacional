@@ -16,7 +16,7 @@ def arc_diagram(
     title: str,
     labels: list[str],
     color_palette: list[str],
-    legend_title: str = "Connection ranges",
+    legend_title: str,
     margins: int = 60,
     size: int = 600,
 ) -> Figure:
@@ -139,9 +139,9 @@ def arc_diagram(
             y=dots.y_position - label_distance,  # Position below the dot
             text=labels[i],
             showarrow=False,
-            xanchor="right",  # Right aligned
+            xanchor="right",
             yanchor="top",
-            textangle=-45,  # Rotated -45 degrees
+            textangle=-45,
             font=dict(size=10, color="black"),
         )
 

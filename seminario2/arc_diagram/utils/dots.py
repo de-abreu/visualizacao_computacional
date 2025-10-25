@@ -101,8 +101,8 @@ class Dots:
 
         return {
             "title": legend_title,
-            "x": 1.02,  # Position legend to the right
-            "y": 0.5,
+            "x": 0.0,  # Position legend to the left
+            "y": 0.7,
             "xanchor": "left",
             "yanchor": "middle",
         }

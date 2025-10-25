@@ -91,6 +91,7 @@ def main():
         matrix=collaboration_matrix,
         title="Colaborações entre Professores do ICMC, em artigos e projetos de pesquisa",
         labels=researchers,
+        legend_title="Colaborações",
     )
 
     # Run the Dash app

@@ -15,6 +15,7 @@ from .utils.spectral_ordering import spectral_order
 def create_arc_diagram_dash(
     matrix: npt.NDArray[np.floating | np.integer],
     title: str = "Arc diagram",
+    legend_title="Connections",
     labels: list[str] | None = None,
     color_palette: list[str] | None = None,
 ) -> dash.Dash:
@@ -27,6 +28,8 @@ def create_arc_diagram_dash(
         Symmetric matrix for the arc diagram
     title : str
         Title of the diagram
+    legend_title: str
+        Title of the legend
     labels : list[str]
         Labels for each node
     color_palette : list[str]
@@ -49,7 +52,7 @@ def create_arc_diagram_dash(
     matrix, labels = spectral_order(matrix, labels)
 
     # Create the initial arc diagram figure
-    fig = arc_diagram(matrix, title, labels, color_palette)
+    fig = arc_diagram(matrix, title, labels, color_palette, legend_title)
 
     # Store matrix data for hover interactions
     matrix_list = matrix.tolist()
@@ -65,25 +68,36 @@ def create_arc_diagram_dash(
 
     for i, trace in enumerate(fig.data):
         # Check if this is a main graph dot (mode='markers', customdata is integer, showlegend=False)
-        if (getattr(trace, 'mode', None) == 'markers' and
-            hasattr(trace, 'customdata') and trace.customdata is not None and
-            isinstance(trace.customdata, tuple) and len(trace.customdata) == 1 and
-            isinstance(trace.customdata[0], int) and
-            getattr(trace, 'showlegend', True) == False):
+        if (
+            getattr(trace, "mode", None) == "markers"
+            and hasattr(trace, "customdata")
+            and trace.customdata is not None
+            and isinstance(trace.customdata, tuple)
+            and len(trace.customdata) == 1
+            and isinstance(trace.customdata[0], int)
+            and getattr(trace, "showlegend", True) == False
+        ):
             # This is a main graph dot
             dot_traces_indices.append(i)
         # Check if this is an arc (mode='lines', customdata is list of two integers)
-        elif (getattr(trace, 'mode', None) == 'lines' and
-              hasattr(trace, 'customdata') and trace.customdata is not None and
-              isinstance(trace.customdata, tuple) and len(trace.customdata) == 1 and
-              isinstance(trace.customdata[0], list) and len(trace.customdata[0]) == 2):
+        elif (
+            getattr(trace, "mode", None) == "lines"
+            and hasattr(trace, "customdata")
+            and trace.customdata is not None
+            and isinstance(trace.customdata, tuple)
+            and len(trace.customdata) == 1
+            and isinstance(trace.customdata[0], list)
+            and len(trace.customdata[0]) == 2
+        ):
             # This is an arc
             arc_traces_indices.append(i)
         # Check if this is a legend trace (showlegend=True)
-        elif getattr(trace, 'showlegend', False):
+        elif getattr(trace, "showlegend", False):
             legend_traces_indices.append(i)
 
-    print(f"DEBUG: Pre-computed {len(dot_traces_indices)} dot traces, {len(arc_traces_indices)} arc traces, and {len(legend_traces_indices)} legend traces")
+    print(
+        f"DEBUG: Pre-computed {len(dot_traces_indices)} dot traces, {len(arc_traces_indices)} arc traces, and {len(legend_traces_indices)} legend traces"
+    )
 
     # Create the Dash app
     app = dash.Dash(__name__)
@@ -144,7 +158,9 @@ def create_arc_diagram_dash(
         dot_traces = dot_traces_indices
         arc_traces = arc_traces_indices
 
-        print(f"DEBUG: Using pre-computed {len(dot_traces)} dot traces and {len(arc_traces)} arc traces")
+        print(
+            f"DEBUG: Using pre-computed {len(dot_traces)} dot traces and {len(arc_traces)} arc traces"
+        )
 
         # Update opacity for dots
         for trace_idx in dot_traces:
@@ -169,38 +185,42 @@ def create_arc_diagram_dash(
                 connected_dots = trace.customdata[0]  # [i, j] array
                 if hovered_index in connected_dots:
                     # Keep related arcs at full opacity - extract color and set to full opacity
-                    if hasattr(trace.line, 'color'):
+                    if hasattr(trace.line, "color"):
                         # Parse existing color and set to full opacity
                         color = trace.line.color
-                        if color.startswith('rgba('):
+                        if color.startswith("rgba("):
                             # Extract RGB values and set alpha to 1.0
-                            rgb_values = color[5:-1].split(',')[:3]
-                            trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)'
+                            rgb_values = color[5:-1].split(",")[:3]
+                            trace.line.color = f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)"
                         else:
                             # Convert to RGBA with full opacity
-                            trace.line.color = f'rgba({color},1.0)'
+                            trace.line.color = f"rgba({color},1.0)"
                 else:
                     # Reduce unrelated arcs to 10% opacity
-                    if hasattr(trace.line, 'color'):
+                    if hasattr(trace.line, "color"):
                         color = trace.line.color
-                        if color.startswith('rgba('):
+                        if color.startswith("rgba("):
                             # Extract RGB values and set alpha to 0.1
-                            rgb_values = color[5:-1].split(',')[:3]
-                            trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},0.1)'
+                            rgb_values = color[5:-1].split(",")[:3]
+                            trace.line.color = f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},0.1)"
                         else:
                             # Convert to RGBA with low opacity
-                            trace.line.color = f'rgba({color},0.1)'
+                            trace.line.color = f"rgba({color},0.1)"
             else:
                 # If no customdata, keep at full opacity
-                if hasattr(trace.line, 'color'):
+                if hasattr(trace.line, "color"):
                     color = trace.line.color
-                    if color.startswith('rgba('):
-                        rgb_values = color[5:-1].split(',')[:3]
-                        trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)'
+                    if color.startswith("rgba("):
+                        rgb_values = color[5:-1].split(",")[:3]
+                        trace.line.color = (
+                            f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)"
+                        )
                     else:
-                        trace.line.color = f'rgba({color},1.0)'
+                        trace.line.color = f"rgba({color},1.0)"
 
-        print(f"DEBUG: Updated opacity for {len(dot_traces)} dots and {len(arc_traces)} arcs")
+        print(
+            f"DEBUG: Updated opacity for {len(dot_traces)} dots and {len(arc_traces)} arcs"
+        )
         return updated_fig
 
     @app.callback(Output("hover-info", "children"), Input("arc-diagram", "hoverData"))
@@ -231,37 +251,3 @@ def create_arc_diagram_dash(
             return "Hover over a dot to see related connections"
 
     return app
-
-
-def main():
-    """
-    Example usage of the Dash arc diagram app.
-    Replace this with your actual matrix data.
-    """
-    # Example matrix (replace with your actual data)
-    matrix = np.array(
-        [
-            [0, 5, 3, 0, 2],
-            [5, 0, 2, 1, 0],
-            [3, 2, 0, 4, 1],
-            [0, 1, 4, 0, 3],
-            [2, 0, 1, 3, 0],
-        ]
-    )
-
-    labels = ["A", "B", "C", "D", "E"]
-
-    # Create and run the Dash app
-    app = create_arc_diagram_dash(
-        matrix=matrix,
-        title="Interactive Arc Diagram with Hover Filtering",
-        labels=labels,
-        size=800,
-    )
-
-    # Run the app
-    app.run(debug=True, host="127.0.0.1", port=8050)
-
-
-if __name__ == "__main__":
-    main()
