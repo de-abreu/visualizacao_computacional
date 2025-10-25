@@ -2,14 +2,14 @@
 Dash App for Interactive Arc Diagram with Hover-based Opacity Filtering
 """
 
-import dash
+from .utils.arc_diagram import arc_diagram
+from .utils.spectral_ordering import spectral_order
+from .utils.validation import validate_matrix, validate_colors, validate_labels
 from dash import dcc, html, Input, Output, callback
-import plotly.graph_objects as go
+from plotly.graph_objects import Figure
+import dash
 import numpy as np
 import numpy.typing as npt
-from .utils.arc_diagram import arc_diagram
-from .utils.validation import validate_matrix, validate_colors, validate_labels
-from .utils.spectral_ordering import spectral_order
 
 
 def create_arc_diagram_dash(
@@ -52,51 +52,27 @@ def create_arc_diagram_dash(
     matrix, labels = spectral_order(matrix, labels)
 
     # Create the initial arc diagram figure
-    fig = arc_diagram(matrix, title, labels, color_palette, legend_title)
+    fig, arc_trace_indexes, dot_trace_indexes = arc_diagram(
+        matrix, title, labels, color_palette, legend_title
+    )
 
     # Store matrix data for hover interactions
     matrix_list = matrix.tolist()
     n = matrix.shape[0]
 
     # Store the original figure for opacity restoration
-    original_fig = go.Figure(fig)
+    original_fig = Figure(fig)
 
-    # Pre-compute which traces are dots vs arcs
-    dot_traces_indices = []
-    arc_traces_indices = []
-    legend_traces_indices = []
+    # Use pre-computed trace indices from arc_diagram
+    arc_start, arc_end = arc_trace_indexes
+    dot_start, dot_end = dot_trace_indexes
 
-    for i, trace in enumerate(fig.data):
-        # Check if this is a main graph dot (mode='markers', customdata is integer, showlegend=False)
-        if (
-            getattr(trace, "mode", None) == "markers"
-            and hasattr(trace, "customdata")
-            and trace.customdata is not None
-            and isinstance(trace.customdata, tuple)
-            and len(trace.customdata) == 1
-            and isinstance(trace.customdata[0], int)
-            and getattr(trace, "showlegend", True) == False
-        ):
-            # This is a main graph dot
-            dot_traces_indices.append(i)
-        # Check if this is an arc (mode='lines', customdata is list of two integers)
-        elif (
-            getattr(trace, "mode", None) == "lines"
-            and hasattr(trace, "customdata")
-            and trace.customdata is not None
-            and isinstance(trace.customdata, tuple)
-            and len(trace.customdata) == 1
-            and isinstance(trace.customdata[0], list)
-            and len(trace.customdata[0]) == 2
-        ):
-            # This is an arc
-            arc_traces_indices.append(i)
-        # Check if this is a legend trace (showlegend=True)
-        elif getattr(trace, "showlegend", False):
-            legend_traces_indices.append(i)
+    # Create lists of trace indices for dots and arcs
+    arc_traces = list(range(arc_start, arc_end + 1))
+    dot_traces = list(range(dot_start, dot_end + 1))
 
     print(
-        f"DEBUG: Pre-computed {len(dot_traces_indices)} dot traces, {len(arc_traces_indices)} arc traces, and {len(legend_traces_indices)} legend traces"
+        f"DEBUG: Using pre-computed {len(dot_traces)} dot traces (indices {dot_start}-{dot_end}) and {len(arc_traces)} arc traces (indices {arc_start}-{arc_end})"
     )
 
     # Create the Dash app
@@ -117,14 +93,11 @@ def create_arc_diagram_dash(
         """
         print(f"DEBUG: Hover data received: {hover_data}")  # Debug logging
 
-        # Start with the original figure
-        ctx = dash.callback_context
-
         # If no hover data, return the original figure with full opacity
         if hover_data is None:
             print("DEBUG: No hover data, resetting all elements to full opacity")
             # Return the original figure (which has the correct initial opacities)
-            return go.Figure(original_fig)
+            return Figure(original_fig)
 
         # Get the hovered dot index from customdata
         try:
@@ -134,7 +107,7 @@ def create_arc_diagram_dash(
         except (KeyError, IndexError, TypeError) as e:
             print(f"DEBUG: Error getting customdata: {e}")
             # Reset all elements to full opacity by returning the original figure
-            return go.Figure(original_fig)
+            return Figure(original_fig)
 
         # Only process hover events from main graph dots (not legend dots)
         # Main graph dots have customdata, legend dots don't
@@ -152,11 +125,7 @@ def create_arc_diagram_dash(
         print(f"DEBUG: Related indices for dot {hovered_index}: {related_indices}")
 
         # Create updated figure with modified opacity
-        updated_fig = go.Figure(fig)
-
-        # Use pre-computed trace indices instead of re-detecting
-        dot_traces = dot_traces_indices
-        arc_traces = arc_traces_indices
+        updated_fig = Figure(fig)
 
         print(
             f"DEBUG: Using pre-computed {len(dot_traces)} dot traces and {len(arc_traces)} arc traces"
@@ -167,14 +136,10 @@ def create_arc_diagram_dash(
             trace = updated_fig.data[trace_idx]
             dot_index = trace.customdata[0]  # Extract the integer from the tuple
 
-            if dot_index == hovered_index:
-                # Keep hovered dot at full opacity
-                trace.marker.opacity = 1.0
-            elif dot_index in related_indices:
-                # Keep related dots at full opacity
+            # Keep hovered dot and related dots at full opacity
+            if dot_index == hovered_index or dot_index in related_indices:
                 trace.marker.opacity = 1.0
             else:
-                # Reduce unrelated dots to 10% opacity
                 trace.marker.opacity = 0.1
 
         # Update opacity for arcs

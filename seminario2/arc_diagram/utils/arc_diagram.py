@@ -19,7 +19,7 @@ def arc_diagram(
     legend_title: str,
     margins: int = 60,
     size: int = 600,
-) -> Figure:
+) -> tuple[Figure, tuple[int, int], tuple[int, int]]:
     row_sums = np.atleast_1d(np.sum(matrix, axis=1, dtype=np.float64))
     n = len(row_sums)
 
@@ -53,9 +53,12 @@ def arc_diagram(
             width=size,
             height=size,
         )
-        return fig
+        return fig, (0, 0), (0, 0)
 
     dots = Dots(row_sums, color_palette, margins)
+
+    # Track dot and arc trace indices
+    trace_count = 0
 
     # Add arcs connecting related dots
     # Only draw arcs for the upper triangle to avoid duplicates
@@ -87,7 +90,7 @@ def arc_diagram(
             color_intensity = matrix[i, j] / max_connection
             color = f"rgba(100, 100, 100, {0.3 + color_intensity * 0.4})"  # Gray with varying opacity
 
-            # Add the arc trace
+            # Add the arc trace and track its index
             _ = fig.add_trace(
                 Scatter(
                     x=x_points,
@@ -102,6 +105,8 @@ def arc_diagram(
                     customdata=[[i, j]],  # Store which dots this arc connects
                 )
             )
+            trace_count += 1
+    arc_trace_indexes = (0, trace_count - 1)
 
     # Store matrix data for hover interactions
     # We'll store the matrix as a list of lists in the figure's metadata
@@ -125,6 +130,8 @@ def arc_diagram(
                 customdata=[i],  # Store the index for hover interactions
             )
         )
+        trace_count += 1
+    dot_trace_indexes = (arc_trace_indexes[1] + 1, trace_count - 1)
 
     # Add text labels underneath each dot
     avg_radius = np.mean(dots.radii)
@@ -164,4 +171,4 @@ def arc_diagram(
         meta={"matrix": matrix_list, "total_dots": n},
     )
 
-    return fig
+    return fig, arc_trace_indexes, dot_trace_indexes

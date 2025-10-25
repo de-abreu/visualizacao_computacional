@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.typing as npt
-from .colors import hex_to_rgba, assign_color
+from .colors import assign_color
 from plotly.graph_objects import Scatter, Figure
 
 
@@ -84,7 +84,7 @@ class Dots:
         for color, range_text, legend_size in zip(
             self.color_palette, ranges, legend_sizes
         ):
-            fig.add_trace(
+            _ = fig.add_trace(
                 Scatter(
                     x=[None],  # No actual data points - required for legend
                     y=[None],
@@ -94,7 +94,7 @@ class Dots:
                         "color": color,
                         "line": {"width": 2, "color": "white"},
                     },
-                    name=f"Connections: {range_text}",
+                    name=range_text,
                     showlegend=True,
                 )
             )
