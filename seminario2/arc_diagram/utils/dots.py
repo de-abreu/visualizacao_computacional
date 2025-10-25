@@ -9,6 +9,7 @@ class Dots:
         self,
         row_sums: npt.NDArray[np.float64],
         color_palette: list[str],
+        margins: int,
         min_radius: int = 10,
         max_radius: int = 30,
     ) -> None:
@@ -27,14 +28,14 @@ class Dots:
         # Centralize dots along the y axis and spread evenly along the x axis
         self.y_position: float = 0.5
         x_positions = []
-        current_x = 0
+        current_x = margins
 
         for i in range(self.count):
             x_positions.append(current_x + self.radii[i])  # Center of circle
             current_x += self.radii[i] * 2
 
         # Calculate total width and normalize x positions to the [0, 1] range
-        self.total_width: int = x_positions[-1] + self.radii[-1]
+        self.total_width: int = x_positions[-1] + self.radii[-1] + 2 * margins
         self.x_positions: list[float] = [x / self.total_width for x in x_positions]
 
         self.colors: list[str] = [

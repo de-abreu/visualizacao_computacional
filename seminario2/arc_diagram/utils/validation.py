@@ -5,14 +5,14 @@ from re import match
 
 def validate_matrix(
     matrix: npt.NDArray[np.floating | np.integer],
-) -> tuple[int, npt.NDArray[np.float64]]:
+) -> int:
     if matrix.ndim != 2:
         raise ValueError("Matrix must have 2 dimensions")
     if np.any(matrix < 0):
         raise ValueError("Matrix must not contain negative values")
     if not np.allclose(matrix, matrix.T):
         raise ValueError("Matrix must be symmetric")
-    return matrix.shape[0], np.atleast_1d(np.sum(matrix, axis=1, dtype=np.float64))
+    return matrix.shape[0]
 
 
 def validate_labels(labels: list[str] | None, length: int) -> list[str]:
