@@ -45,12 +45,19 @@ def spectral_order_matrix(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     degree_matrix = np.diag(np.sum(matrix, axis=1))
     laplacian = degree_matrix - matrix
 
-    # Compute eigenvectors
+    # Compute eigenvectors with deterministic algorithm
+    # Use a fixed random seed for reproducibility
+    np.random.seed(42)  # Fixed seed for deterministic results
     _, eigenvectors = np.linalg.eigh(laplacian)
 
     # Find the Fiedler vector (second smallest eigenvector, excluding the zero eigenvalue)
     # The smallest eigenvalue is always 0 for connected graphs
     fiedler_vector = eigenvectors[:, 1]
+
+    # Normalize the Fiedler vector to handle sign ambiguity
+    # Ensure consistent direction by making the first non-zero element positive
+    if fiedler_vector[0] < 0:
+        fiedler_vector = -fiedler_vector
 
     # Sort nodes by Fiedler vector values
     permutation = np.argsort(fiedler_vector)

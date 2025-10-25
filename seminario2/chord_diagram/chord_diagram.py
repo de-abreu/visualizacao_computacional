@@ -146,7 +146,6 @@ def chord_diagram(
     # If dataset is empty (all row sums are zero) return an empty plot with the
     # "Dataset is empty" message
     row_sums = np.atleast_1d(np.sum(matrix, axis=1, dtype=np.float64))
-    np.set_printoptions(threshold=np.inf)
     hide = {"showgrid": False, "zeroline": False, "showticklabels": False, "title": ""}
     if np.sum(row_sums) == 0:
         fig = Figure()

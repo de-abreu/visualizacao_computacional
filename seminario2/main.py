@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 import numpy as np
 import pandas as pd
 
-from chord_diagram.chord_diagram import chord_diagram
+from arc_diagram.arc_diagram import arc_diagram
 
 
 def main():
@@ -68,16 +68,17 @@ def main():
         .reset_index(name="collaborations")
     )
 
-    # Create set of all unique researcher names
-    all_researchers = set(collaboration_graph["researcher_1"]).union(
-        set(collaboration_graph["researcher_2"])
+    researchers = sorted(
+        set(collaboration_graph["researcher_1"]).union(
+            set(collaboration_graph["researcher_2"])
+        )
     )
 
     # Create mapping from researcher name to matrix index directly from the set
-    researcher_to_index = {name: idx for idx, name in enumerate(all_researchers)}
+    researcher_to_index = {name: idx for idx, name in enumerate(researchers)}
 
     # Create empty square matrix
-    n = len(all_researchers)
+    n = len(researchers)
     collaboration_matrix = np.zeros((n, n), dtype=int)
 
     # Populate matrix with collaboration values
@@ -86,13 +87,11 @@ def main():
         j = researcher_to_index[row["researcher_2"]]
         collaboration_matrix[i, j] = collaboration_matrix[j, i] = row["collaborations"]
 
-    fig = chord_diagram(
+    fig = arc_diagram(
         collaboration_matrix,
         title="Colaborações entre Professores do ICMC, em artigos e projetos de pesquisa",
-        labels=list(all_researchers),
-        arc_hover_template="{label}:<br>{total} colaborações",
-        connection_hover_template="{origin} e {destination}: {value} colaborações",
-        num_points=300,
+        labels=researchers,
+        size=800,
     )
 
     # Display the figure in a browser window
