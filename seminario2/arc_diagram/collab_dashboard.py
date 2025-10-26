@@ -1,22 +1,25 @@
 """
 Dash App for Interactive Arc Diagram with Hover-based Opacity Filtering
+
+This module provides a Dash application that creates an interactive arc diagram
+for visualizing collaborations between researchers. The diagram supports hover-based
+opacity filtering to highlight related connections when hovering over nodes.
 """
 
 from .utils.arc_diagram import arc_diagram
 from .utils.spectral_ordering import spectral_order
-from .utils.validation import validate_matrix, validate_colors, validate_labels
+from .utils.validation import validate_colors
 from dash import dcc, html, Input, Output
 from plotly.graph_objects import Figure
 import dash
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 
 
 def create_collab_dashboard(
     collab_df: pd.DataFrame,
     title: str = "Collaborations between researchers",
-    legend_title="Collaboration count",
+    legend_title: str = "Collaboration count",
     color_palette: list[str] | None = None,
 ) -> dash.Dash:
     """
@@ -24,18 +27,15 @@ def create_collab_dashboard(
 
     Parameters
     ----------
-    matrix : np.ndarray
-        Symmetric matrix for the arc diagram
+    collab_df : pd.DataFrame
+        DataFrame containing collaboration data with columns: researcher_1, researcher_2,
+        collaboration, type, start, end
     title : str
         Title of the diagram
-    legend_title: str
+    legend_title : str
         Title of the legend
-    labels : list[str]
-        Labels for each node
-    color_palette : list[str]
-        Color palette for the diagram
-    size : int
-        Size of the diagram
+    color_palette : list[str] | None
+        Color palette for the diagram. If None, uses default colors.
 
     Returns
     -------
@@ -90,10 +90,6 @@ def create_collab_dashboard(
     arc_traces = list(range(arc_start, arc_end + 1))
     dot_traces = list(range(dot_start, dot_end + 1))
 
-    print(
-        f"DEBUG: Using pre-computed {len(dot_traces)} dot traces (indices {dot_start}-{dot_end}) and {len(arc_traces)} arc traces (indices {arc_start}-{arc_end})"
-    )
-
     # Create the Dash app
     app = dash.Dash(__name__)
 
@@ -133,37 +129,20 @@ def create_collab_dashboard(
         Update dot and arc opacity based on hover interactions.
         When hovering over a dot, reduce opacity of unrelated dots and arcs to 10%.
         """
-        print(f"DEBUG: Hover data received: {hover_data}")  # Debug logging
 
         # If no hover data, return the original figure with full opacity
         if hover_data is None:
-            print("DEBUG: No hover data, resetting all elements to full opacity")
-            # Return the original figure (which has the correct initial opacities)
-            return Figure(original_fig)
-
-        # Get the hovered dot index from customdata
-        try:
-            hovered_index = hover_data["points"][0]["customdata"]
-            print(f"DEBUG: Hovered index: {hovered_index}")
-        except (KeyError, IndexError, TypeError) as e:
-            print(f"DEBUG: Error getting customdata: {e}")
-            # Reset all elements to full opacity by returning the original figure
             return Figure(original_fig)
 
         # Find dots related to the hovered dot (non-zero values in the row)
+        hovered_index = hover_data["points"][0]["customdata"]
         related_indices = []
         for j in range(n):
             if matrix_list[hovered_index][j] > 0:
                 related_indices.append(j)
 
-        print(f"DEBUG: Related indices for dot {hovered_index}: {related_indices}")
-
         # Create updated figure with modified opacity
         updated_fig = Figure(fig)
-
-        print(
-            f"DEBUG: Using pre-computed {len(dot_traces)} dot traces and {len(arc_traces)} arc traces"
-        )
 
         # Update opacity for dots
         for trace_idx in dot_traces:
@@ -187,21 +166,16 @@ def create_collab_dashboard(
                 f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},{opacity})"
             )
 
-        print(
-            f"DEBUG: Updated opacity for {len(dot_traces)} dots and {len(arc_traces)} arcs"
-        )
         return updated_fig
 
     @app.callback(Output("hover-info", "children"), Input("arc-diagram", "hoverData"))
     def display_hover_info(hover_data):
         """Display detailed information about the hovered researcher and their collaborations."""
-        print(f"DEBUG: Hover data received: {hover_data}")  # Debug logging
         if hover_data is None:
             return "Passe o mouse sobre um ponto para ver as colaborações"
 
         try:
             hovered_index = hover_data["points"][0]["customdata"]
-            print(f"DEBUG: Hovered index: {hovered_index}")
             hovered_label = (
                 labels[hovered_index] if labels else f"Node {hovered_index + 1}"
             )
@@ -227,8 +201,6 @@ def create_collab_dashboard(
                     if collab["researcher_1"] == hovered_label
                     else collab["researcher_1"]
                 )
-
-                # Translate type to Portuguese
                 collab_type = collab["type"]
                 start_year = collab["start"]
                 end_year = collab["end"] if pd.notna(collab["end"]) else "Presente"
@@ -255,11 +227,13 @@ def create_collab_dashboard(
                             html.Thead(
                                 html.Tr(
                                     [
-                                        html.Th("Colaborador"),
-                                        html.Th("Título"),
-                                        html.Th("Tipo"),
-                                        html.Th("Início"),
-                                        html.Th("Término"),
+                                        html.Th(
+                                            "Colaborador", style={"textAlign": "left"}
+                                        ),
+                                        html.Th("Título", style={"textAlign": "left"}),
+                                        html.Th("Tipo", style={"textAlign": "left"}),
+                                        html.Th("Início", style={"textAlign": "left"}),
+                                        html.Th("Término", style={"textAlign": "left"}),
                                     ]
                                 )
                             ),

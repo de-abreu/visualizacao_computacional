@@ -1,2 +1,10 @@
 [tool.setuptools.packages.find]
 where = ["arc_diagram"]  # Set the root directory to 'app'
+
+[tool.pyright]
+reportCallIssue = false
+reportAttributeAccessIssue = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportAny = false

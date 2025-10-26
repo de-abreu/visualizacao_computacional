@@ -5,6 +5,13 @@ from plotly.graph_objects import Scatter, Figure
 
 
 class Dots:
+    """
+    A class to manage the dots (nodes) in an arc diagram.
+
+    This class handles the positioning, sizing, and coloring of nodes
+    based on their connection sums.
+    """
+
     def __init__(
         self,
         row_sums: npt.NDArray[np.float64],
@@ -13,6 +20,22 @@ class Dots:
         min_radius: int = 10,
         max_radius: int = 30,
     ) -> None:
+        """
+        Initialize the Dots object.
+
+        Parameters
+        ----------
+        row_sums : npt.NDArray[np.float64]
+            Array containing the sum of connections for each node
+        color_palette : list[str]
+            Color palette for the nodes
+        margins : int
+            Margins for the diagram layout
+        min_radius : int, optional
+            Minimum radius for nodes, by default 10
+        max_radius : int, optional
+            Maximum radius for nodes, by default 30
+        """
         self.values: npt.NDArray[np.float64] = row_sums
         self.color_palette: list[str] = color_palette
         self.count: int = len(self.values)
@@ -44,7 +67,21 @@ class Dots:
         ]
 
     def add_legend(self, fig: Figure, legend_title: str) -> dict[str, str | float]:
-        """Update the figure layout with proper sizing and legend"""
+        """
+        Add a legend to the figure showing color ranges for connection values.
+
+        Parameters
+        ----------
+        fig : Figure
+            Plotly figure to add the legend to
+        legend_title : str
+            Title for the legend
+
+        Returns
+        -------
+        dict[str, str | float]
+            Legend configuration dictionary for Plotly layout
+        """
 
         # Create color range legend
         # Calculate the connection value ranges for each color in the palette

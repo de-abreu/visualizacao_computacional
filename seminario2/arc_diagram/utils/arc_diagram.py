@@ -19,6 +19,32 @@ def arc_diagram(
     margins: int = 60,
     size: int = 600,
 ) -> tuple[Figure, tuple[int, int], tuple[int, int]]:
+    """
+    Create an interactive arc diagram visualization.
+
+    Parameters
+    ----------
+    matrix : npt.NDArray[np.floating | np.integer]
+        Symmetric matrix representing connections between entities
+    labels : list[str]
+        Labels for each entity (node)
+    color_palette : list[str]
+        Color palette for the diagram
+    legend_title : str
+        Title for the legend
+    margins : int, optional
+        Margins for the diagram layout, by default 60
+    size : int, optional
+        Size of the diagram, by default 600
+
+    Returns
+    -------
+    tuple[Figure, tuple[int, int], tuple[int, int]]
+        Tuple containing:
+        - Figure: Plotly figure object
+        - tuple[int, int]: Start and end indices of arc traces
+        - tuple[int, int]: Start and end indices of dot traces
+    """
     row_sums = np.atleast_1d(np.sum(matrix, axis=1, dtype=np.float64))
     n = len(row_sums)
 
