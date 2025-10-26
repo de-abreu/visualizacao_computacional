@@ -24,7 +24,7 @@ interativa de dados de maneira a favorável a análise dos mesmos.
 **Palavras-chave:** _webscrapping_, banco de dados relacional, dashboards,
 visualização de dados.
 
-### Introdução
+## Introdução
 
 Conforme a proposta de seminário apresentada em enunciado, buscamos realizar um
 levantamento de dados pertinentes a vivência universitária no ICMC. Em
