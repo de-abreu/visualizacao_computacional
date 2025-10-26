@@ -39,7 +39,7 @@ class Dots:
         self.x_positions: list[float] = [x / self.total_width for x in x_positions]
 
         self.colors: list[str] = [
-            assign_color(self.radii[i], max_radius, color_palette)
+            assign_color(self.values[i], np.max(self.values), color_palette)
             for i in range(self.count)
         ]
 
@@ -52,10 +52,7 @@ class Dots:
         min_connections = np.min(self.values)
         max_connections = np.max(self.values)
 
-        # Calculate the connection value ranges for each color
-        ranges: list[str] = []
-
-        for i in range(num_colors):
+        def bounds(i: int):
             lower_bound = (
                 min_connections + (max_connections - min_connections) * i / num_colors
             )
@@ -63,34 +60,24 @@ class Dots:
                 min_connections
                 + (max_connections - min_connections) * (i + 1) / num_colors
             )
+            return (lower_bound, upper_bound)
 
-            range_text = f"{lower_bound:.0f} - {upper_bound:.0f}"
-            ranges.append(range_text)
-
-        # Create gradual size progression for legend dots
-        # Use simple linear progression from smallest to largest
-        min_legend_size = 4  # Smallest legend dot size
-        max_legend_size = 20  # Largest legend dot size
-
-        legend_sizes = []
-        for i in range(num_colors):
-            # Linear progression from min to max
-            size = min_legend_size + (max_legend_size - min_legend_size) * i / (
-                num_colors - 1
-            )
-            legend_sizes.append(int(size))
+        ranges = []
+        for i in range(num_colors - 1):
+            b = bounds(i)
+            ranges.append(f"{b[0]:.0f} - {b[1] - 1:.0f}")
+        b = bounds(num_colors - 1)
+        ranges.append(f"{b[0]:.0f} - {b[1] - 1:.0f}")
 
         # Add legend entries for each color range with gradual size progression
-        for color, range_text, legend_size in zip(
-            self.color_palette, ranges, legend_sizes
-        ):
+        for color, range_text in zip(self.color_palette, ranges):
             _ = fig.add_trace(
                 Scatter(
                     x=[None],  # No actual data points - required for legend
                     y=[None],
                     mode="markers",
                     marker={
-                        "size": legend_size,  # Use gradual size progression
+                        "size": 20,
                         "color": color,
                         "line": {"width": 2, "color": "white"},
                     },

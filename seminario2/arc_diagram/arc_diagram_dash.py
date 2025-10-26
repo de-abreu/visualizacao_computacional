@@ -145,43 +145,13 @@ def create_arc_diagram_dash(
         # Update opacity for arcs
         for trace_idx in arc_traces:
             trace = updated_fig.data[trace_idx]
-            # Check if this arc connects to the hovered dot
-            if trace.customdata is not None:
-                connected_dots = trace.customdata[0]  # [i, j] array
-                if hovered_index in connected_dots:
-                    # Keep related arcs at full opacity - extract color and set to full opacity
-                    if hasattr(trace.line, "color"):
-                        # Parse existing color and set to full opacity
-                        color = trace.line.color
-                        if color.startswith("rgba("):
-                            # Extract RGB values and set alpha to 1.0
-                            rgb_values = color[5:-1].split(",")[:3]
-                            trace.line.color = f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)"
-                        else:
-                            # Convert to RGBA with full opacity
-                            trace.line.color = f"rgba({color},1.0)"
-                else:
-                    # Reduce unrelated arcs to 10% opacity
-                    if hasattr(trace.line, "color"):
-                        color = trace.line.color
-                        if color.startswith("rgba("):
-                            # Extract RGB values and set alpha to 0.1
-                            rgb_values = color[5:-1].split(",")[:3]
-                            trace.line.color = f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},0.1)"
-                        else:
-                            # Convert to RGBA with low opacity
-                            trace.line.color = f"rgba({color},0.1)"
-            else:
-                # If no customdata, keep at full opacity
-                if hasattr(trace.line, "color"):
-                    color = trace.line.color
-                    if color.startswith("rgba("):
-                        rgb_values = color[5:-1].split(",")[:3]
-                        trace.line.color = (
-                            f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},1.0)"
-                        )
-                    else:
-                        trace.line.color = f"rgba({color},1.0)"
+            connected_dots = trace.customdata[0]  # [i, j] array
+            color = trace.line.color
+            rgb_values = color[5:-1].split(",")[:3]
+            opacity = 1.0 if hovered_index in connected_dots else 0.1
+            trace.line.color = (
+                f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},{opacity})"
+            )
 
         print(
             f"DEBUG: Updated opacity for {len(dot_traces)} dots and {len(arc_traces)} arcs"
