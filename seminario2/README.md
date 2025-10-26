@@ -10,6 +10,21 @@
 | Lucas Pereira Franco de Almeida           | 12675020 |
 | Miguel Prates Ferreira de Lima Cantanhede | 13672745 |
 
+## Sumário
+
+<!--toc:start-->
+
+- [Resumo](#resumo)
+- [Introdução](#introdução)
+- [Ambiente de desenvolvimento](#ambiente-de-desenvolvimento)
+- [Webcrawler](#webcrawler)
+- [Visualizações](#visualizações)
+  - [Diagrama de Arcos](#diagrama-de-arcos)
+  - [Gráfico de Dispersão](#gráfico-de-dispersão)
+  - [Gráfico de linhas](#gráfico-de-linhas)
+- [Conclusões](#conclusões)
+<!--toc:end-->
+
 ## Resumo
 
 No presente trabalho, realizamos um estudo de caso onde, a partir de um
@@ -74,3 +89,17 @@ os docentes deste instituto, e alguns agrupamentos entre aqueles mais
 colaborativos.
 
 > [!NOTE] Adicionar conclusões do Lucas e Bom Dia
+
+## Ambiente de desenvolvimento
+
+## Webcrawler
+
+## Visualizações
+
+### Diagrama de Arcos
+
+### Gráfico de Dispersão
+
+### Gráfico de linhas
+
+## Conclusões
