@@ -1,8 +1,5 @@
 from sqlalchemy import create_engine
-
-import numpy as np
 import pandas as pd
-
 from arc_diagram.collab_dashboard import create_collab_dashboard
 
 
@@ -69,7 +66,7 @@ def main():
     )
 
     # Run the Dash app
-    app.run(debug=True, host="127.0.0.1", port=8051)
+    app.run(host="127.0.0.1", port=8051)
 
 
 if __name__ == "__main__":
