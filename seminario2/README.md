@@ -88,9 +88,25 @@ Ao término de nossa pesquisa encontramos notável presença de colaboração en
 os docentes deste instituto, e alguns agrupamentos entre aqueles mais
 colaborativos.
 
-> [!NOTE] Adicionar conclusões do Lucas e Bom Dia
+> [!NOTE]
+>
+> Adicionar conclusões do Lucas e Bom Dia
 
 ## Ambiente de desenvolvimento
+
+Primeiramente, faz-se necessário o carregamento dos dados deste projeto à partir
+de seu repositório git:
+
+```bash
+git clone https://github.com/de-abreu/visualizacao_computacional.git
+```
+
+> [!TIP]
+>
+> Instruções de instalação para o
+> [git](https://github.com/git-guides/install-git)
+
+### Usando DevEnv
 
 ## Webcrawler
 
