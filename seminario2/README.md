@@ -44,7 +44,7 @@ visualização de dados.
 Conforme a proposta de seminário apresentada em enunciado, buscamos realizar um
 levantamento de dados pertinentes a vivência universitária no ICMC. Em
 particular, focamo-nos na exploração dos dados oferecidos pela plataforma
-[Currículo Lattes](https://lattes.cnpq.br/), acerca da procução científica do
+[Currículo Lattes](https://lattes.cnpq.br/), acerca da produção científica do
 atual corpo docente deste instituto, conforme consta no
 [site](https://icmc.usp.br/pessoas) deste. Pretendeu-se, ao final, responder as
 seguintes perguntas:
