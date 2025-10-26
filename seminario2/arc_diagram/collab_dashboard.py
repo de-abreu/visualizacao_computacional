@@ -5,18 +5,18 @@ Dash App for Interactive Arc Diagram with Hover-based Opacity Filtering
 from .utils.arc_diagram import arc_diagram
 from .utils.spectral_ordering import spectral_order
 from .utils.validation import validate_matrix, validate_colors, validate_labels
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output
 from plotly.graph_objects import Figure
 import dash
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 
 
-def create_arc_diagram_dash(
-    matrix: npt.NDArray[np.floating | np.integer],
-    title: str = "Arc diagram",
-    legend_title="Connections",
-    labels: list[str] | None = None,
+def create_collab_dashboard(
+    collab_df: pd.DataFrame,
+    title: str = "Collaborations between researchers",
+    legend_title="Collaboration count",
     color_palette: list[str] | None = None,
 ) -> dash.Dash:
     """
@@ -43,9 +43,29 @@ def create_arc_diagram_dash(
         Dash application with interactive arc diagram
     """
 
-    # Validate parameters
-    n = validate_matrix(matrix)
-    labels = validate_labels(labels, n)
+    collab_graph: pd.DataFrame = (
+        collab_df.groupby(["researcher_1", "researcher_2"])
+        .size()
+        .reset_index(name="collaborations")
+    )
+
+    labels = sorted(
+        set(collab_graph["researcher_1"]).union(set(collab_graph["researcher_2"]))
+    )
+
+    # Create mapping from researcher name to matrix index directly from the set
+    researcher_to_index = {name: idx for idx, name in enumerate(labels)}
+
+    # Create empty square matrix
+    n = len(labels)
+    matrix = np.zeros((n, n), dtype=int)
+
+    # Populate matrix with collaboration values
+    for _, row in collab_graph.iterrows():
+        i = researcher_to_index[row["researcher_1"]]
+        j = researcher_to_index[row["researcher_2"]]
+        matrix[i, j] = matrix[j, i] = row["collaborations"]
+
     color_palette = validate_colors(color_palette)
 
     # Sort data for optimal display
@@ -53,12 +73,11 @@ def create_arc_diagram_dash(
 
     # Create the initial arc diagram figure
     fig, arc_trace_indexes, dot_trace_indexes = arc_diagram(
-        matrix, title, labels, color_palette, legend_title
+        matrix, labels, color_palette, legend_title
     )
 
     # Store matrix data for hover interactions
     matrix_list = matrix.tolist()
-    n = matrix.shape[0]
 
     # Store the original figure for opacity restoration
     original_fig = Figure(fig)
@@ -80,9 +99,33 @@ def create_arc_diagram_dash(
 
     app.layout = html.Div(
         [
-            dcc.Graph(id="arc-diagram", figure=fig, config={"displayModeBar": True}),
+            html.H1(
+                title,
+                style={
+                    "textAlign": "left",
+                    "marginBottom": "20px",
+                },
+            ),
+            html.Div(
+                dcc.Graph(
+                    id="arc-diagram", figure=fig, config={"displayModeBar": True}
+                ),
+                style={
+                    "overflowX": "auto",
+                    "border": "1px solid #ddd",
+                    "borderRadius": "4px",
+                    "padding": "10px",
+                    "backgroundColor": "#f9f9f9",
+                },
+            ),
             html.Div(id="hover-info", style={"marginTop": 20}),
-        ]
+        ],
+        style={
+            "width": "97vw",
+            # "margin": "0 40px",
+            "padding": "20px",
+            "fontFamily": "sans-serif",
+        },
     )
 
     @app.callback(Output("arc-diagram", "figure"), Input("arc-diagram", "hoverData"))
@@ -101,20 +144,12 @@ def create_arc_diagram_dash(
 
         # Get the hovered dot index from customdata
         try:
-            # customdata is an integer, not a list
             hovered_index = hover_data["points"][0]["customdata"]
             print(f"DEBUG: Hovered index: {hovered_index}")
         except (KeyError, IndexError, TypeError) as e:
             print(f"DEBUG: Error getting customdata: {e}")
             # Reset all elements to full opacity by returning the original figure
             return Figure(original_fig)
-
-        # Only process hover events from main graph dots (not legend dots)
-        # Main graph dots have customdata, legend dots don't
-        if hovered_index >= n:
-            print(f"DEBUG: Legend dot hovered (index {hovered_index}), ignoring")
-            # This is a legend dot, return original figure
-            return fig
 
         # Find dots related to the hovered dot (non-zero values in the row)
         related_indices = []
@@ -160,9 +195,9 @@ def create_arc_diagram_dash(
 
     @app.callback(Output("hover-info", "children"), Input("arc-diagram", "hoverData"))
     def display_hover_info(hover_data):
-        """Display information about the hovered dot."""
+        """Display detailed information about the hovered researcher and their collaborations."""
         if hover_data is None:
-            return "Hover over a dot to see related connections"
+            return "Passe o mouse sobre um ponto para ver as colaborações"
 
         try:
             hovered_index = hover_data["points"][0]["customdata"][0]
@@ -170,19 +205,76 @@ def create_arc_diagram_dash(
                 labels[hovered_index] if labels else f"Node {hovered_index + 1}"
             )
 
-            # Count related dots
-            related_count = sum(
-                1 for j in range(n) if matrix_list[hovered_index][j] > 0
-            )
+            # Count total collaborations (sum of all connections for this researcher)
+            total_collaborations = sum(matrix_list[hovered_index])
+
+            # Get all collaborations for this researcher from the original dataframe
+            researcher_collabs = collab_df[
+                (collab_df["researcher_1"] == hovered_label)
+                | (collab_df["researcher_2"] == hovered_label)
+            ].copy()
+
+            # Sort by start date
+            researcher_collabs = researcher_collabs.sort_values("start")
+
+            # Create table rows for each collaboration
+            table_rows = []
+            for _, collab in researcher_collabs.iterrows():
+                # Determine the collaborator name (the other researcher)
+                collaborator = (
+                    collab["researcher_2"]
+                    if collab["researcher_1"] == hovered_label
+                    else collab["researcher_1"]
+                )
+
+                # Translate type to Portuguese
+                collab_type = collab["type"]
+                start_year = collab["start"]
+                end_year = collab["end"] if pd.notna(collab["end"]) else "Presente"
+
+                table_rows.append(
+                    html.Tr(
+                        [
+                            html.Td(collaborator),
+                            html.Td(collab["collaboration"]),
+                            html.Td(collab_type),
+                            html.Td(str(start_year)),
+                            html.Td(str(end_year)),
+                        ]
+                    )
+                )
 
             return html.Div(
                 [
-                    html.H4(f"Hovering: {hovered_label}"),
-                    html.P(f"Connected to {related_count} other nodes"),
-                    html.P("Unrelated nodes are faded to 10% opacity"),
+                    html.H4(f"Pesquisador: {hovered_label}"),
+                    html.P(f"Total de colaborações: {total_collaborations}"),
+                    html.H5("Detalhes das Colaborações:"),
+                    html.Table(
+                        [
+                            html.Thead(
+                                html.Tr(
+                                    [
+                                        html.Th("Colaborador"),
+                                        html.Th("Título"),
+                                        html.Th("Tipo"),
+                                        html.Th("Início"),
+                                        html.Th("Término"),
+                                    ]
+                                )
+                            ),
+                            html.Tbody(table_rows),
+                        ],
+                        style={
+                            "width": "100%",
+                            "borderCollapse": "collapse",
+                            "border": "1px solid #ddd",
+                            "marginTop": "10px",
+                        },
+                    ),
                 ]
             )
+
         except (KeyError, IndexError, TypeError):
-            return "Hover over a dot to see related connections"
+            return "Passe o mouse sobre um ponto para ver as colaborações"
 
     return app

@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 import numpy as np
 import pandas as pd
 
-from arc_diagram.arc_diagram_dash import create_arc_diagram_dash
+from arc_diagram.collab_dashboard import create_collab_dashboard
 
 
 def main():
@@ -61,36 +61,10 @@ def main():
     print("✓ Dados de colaboração carregados com sucesso")
     print(f"  - {len(collaborations)} registros carregados")
 
-    collaboration_graph: pd.DataFrame = (
-        collaborations.groupby(["researcher_1", "researcher_2"])
-        .size()
-        .reset_index(name="collaborations")
-    )
-
-    researchers = sorted(
-        set(collaboration_graph["researcher_1"]).union(
-            set(collaboration_graph["researcher_2"])
-        )
-    )
-
-    # Create mapping from researcher name to matrix index directly from the set
-    researcher_to_index = {name: idx for idx, name in enumerate(researchers)}
-
-    # Create empty square matrix
-    n = len(researchers)
-    collaboration_matrix = np.zeros((n, n), dtype=int)
-
-    # Populate matrix with collaboration values
-    for _, row in collaboration_graph.iterrows():
-        i = researcher_to_index[row["researcher_1"]]
-        j = researcher_to_index[row["researcher_2"]]
-        collaboration_matrix[i, j] = collaboration_matrix[j, i] = row["collaborations"]
-
     # Create and run the Dash app with interactive hover filtering
-    app = create_arc_diagram_dash(
-        matrix=collaboration_matrix,
+    app = create_collab_dashboard(
+        collab_df=collaborations,
         title="Colaborações entre Professores do ICMC, em artigos e projetos de pesquisa",
-        labels=researchers,
         legend_title="Colaborações",
     )
 

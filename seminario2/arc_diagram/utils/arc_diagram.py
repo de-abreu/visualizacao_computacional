@@ -13,7 +13,6 @@ from .dots import Dots
 
 def arc_diagram(
     matrix: npt.NDArray[np.floating | np.integer],
-    title: str,
     labels: list[str],
     color_palette: list[str],
     legend_title: str,
@@ -46,7 +45,6 @@ def arc_diagram(
             font={"size": 20, "color": "red"},
         )
         _ = fig.update_layout(
-            title="Empty Dataset",
             showlegend=False,
             xaxis=hide,
             yaxis=hide,
@@ -154,7 +152,6 @@ def arc_diagram(
 
     # Update layout with custom JavaScript for hover interactions
     _ = fig.update_layout(
-        title=title,
         width=dots.total_width,
         height=size,
         xaxis=hide,
