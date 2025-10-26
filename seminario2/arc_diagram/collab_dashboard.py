@@ -122,7 +122,6 @@ def create_collab_dashboard(
         ],
         style={
             "width": "97vw",
-            # "margin": "0 40px",
             "padding": "20px",
             "fontFamily": "sans-serif",
         },
@@ -196,11 +195,13 @@ def create_collab_dashboard(
     @app.callback(Output("hover-info", "children"), Input("arc-diagram", "hoverData"))
     def display_hover_info(hover_data):
         """Display detailed information about the hovered researcher and their collaborations."""
+        print(f"DEBUG: Hover data received: {hover_data}")  # Debug logging
         if hover_data is None:
             return "Passe o mouse sobre um ponto para ver as colaborações"
 
         try:
-            hovered_index = hover_data["points"][0]["customdata"][0]
+            hovered_index = hover_data["points"][0]["customdata"]
+            print(f"DEBUG: Hovered index: {hovered_index}")
             hovered_label = (
                 labels[hovered_index] if labels else f"Node {hovered_index + 1}"
             )
