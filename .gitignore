@@ -1,6 +1,7 @@
 .kaggle.json
 .ipynb_checkpoints/
 .venv/
+**/venv/
 **/**cache**
 
 # Devenv
