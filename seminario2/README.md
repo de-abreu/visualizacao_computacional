@@ -210,7 +210,7 @@ jupyter notebook seminario2/seminario2.ipynb
 
 ### Diagrama de Arcos
 
-#### Premissa {#premissa-arcos}
+<h4 id="premissa-arcos">Premissa</h4>
 
 ![Diagrama de Arcos](imgs/arc_diagram_start.png)
 
@@ -222,7 +222,7 @@ arcos que os conectam. Assim sendo, esta trata-se de uma visualização adequada
 para a representação de redes cujas relações se dão de forma não direcionada,
 como é o caso das colaborações entre os docentes.
 
-#### Pré-processamento dos dados {#pre-processamento-dos-dados-arcos}
+<h4 id="pre-processamento-dos-dados">Pré-processamento dos dados</h4>
 
 Nosso banco de dados foi prontificado a nos fornecer uma tabela cujas colunas e
 tipos de dados são
@@ -250,7 +250,7 @@ A ordem em que os pontos figuram no diagrama correspondem a ordenação espectra
 possível entre nós altamente conectados. Como resultado, os arcos que conectam
 os pontos são os menores possíveis e tendem a formação de grupos.
 
-#### Funcionalidades {#funcionalidades-arcos}
+<h4 id="funcionalidades-arcos">Funcionalidades</h4>
 
 Não encontramos uma biblioteca que gerasse diagramas de arco dotados de
 interatividade, então recorremos desenvolver nossa própria. Fizemos uso das
@@ -269,7 +269,7 @@ quais este pesquisador colaborou em ordem cronológica.
 
 ### Gráfico de Bolhas
 
-#### Premissa {#premissa-bolhas}
+<h4 id="premissa-bolhas">Premissa</h4>
 
 ![Gráfico de Bolhas](imgs/bubble_plot.png)
 
@@ -294,7 +294,7 @@ como perceber como se comportam grupos pertencentes a mesma macro área
 (Computação, Matemática, Matemática Aplicada e Estatística) e quais grupos são
 responsáveis por mais ou menos artigos publicados.
 
-#### Pré-processamento dos Dados {#pre-processamento-dos-dados-bolhas}
+<h4 id="pre-processamento-dos-dados-bolhas">Pré-processamento dos dados</h4>
 
 Nosso banco de dados foi prontificado a nos fornecer uma tabela de artigos cujas
 colunas e tipos de dados são:
@@ -366,7 +366,7 @@ o tamanho corresponde a quantidade de artigos que ela representa. O gráfico de
 bolhas é então plotado com essas informações junto de uma legenda onde as cores
 das bolhas representam a Macro área da qual fazem parte.
 
-#### Funcionalidades {#funcionalidades-bolhas}
+<h4 id="funcionalidades-bolhas">Funcionalidades</h4>
 
 Para a geração do gráfico, optamos por usar a biblioteca `plotly`. Com ela além
 de plotar adequadamente o resultado como mostra a figura anterior, foi possível
