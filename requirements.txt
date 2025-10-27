@@ -17,6 +17,7 @@ tqdm==4.67.1
 
 # Webscrapper
 attrs==25.4.0
+beautifulsoup4==4.14.2
 certifi==2025.10.5
 charset-normalizer==3.4.3
 dill==0.4.0
