@@ -1,5 +1,4 @@
 # pyright: reportAny=false
-from json import dumps
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from tqdm import tqdm
@@ -20,7 +19,7 @@ from utils import (
 )
 
 # Load dataset
-DATA_PATH = "../data"
+DATA_PATH = "../webcrawlers"
 LATTES_DICT = lattes_ids(f"{DATA_PATH}/docentes.csv")
 results = recover_backup(f"{DATA_PATH}/professores_all.pkl")
 
