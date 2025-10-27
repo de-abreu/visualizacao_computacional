@@ -119,7 +119,7 @@ git:
 git clone https://github.com/de-abreu/visualizacao_computacional.git
 ```
 
-> [!TIP] Dica
+> [!TIP]
 >
 > [Instruções para a instalação do git](https://github.com/git-guides/install-git)
 
@@ -138,7 +138,7 @@ devenv shell
 
 Para acessar um ambiente virtual com todas as dependências instaladas.
 
-> [!TIP] Dica
+> [!TIP]
 >
 > [Instruções para a instalação do DevEnv](https://devenv.sh/getting-started/)
 
