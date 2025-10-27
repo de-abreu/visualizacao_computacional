@@ -1,3 +1,4 @@
+*.pdf
 .kaggle.json
 .ipynb_checkpoints/
 .venv/
