@@ -25,13 +25,13 @@
 - [Modelagem do Banco de Dados](#modelagem-do-banco-de-dados)
 - [Visualizações](#visualizações)
   - [Diagrama de Arcos](#diagrama-de-arcos)
-    - [Premissa](#premissa)
-    - [Pré-processamento dos dados](#pré-processamento-dos-dados)
-    - [Funcionalidades](#funcionalidades)
+    - [Premissa](#premissa-arcos)
+    - [Pré-processamento dos dados](#pré-processamento-dos-dados-arcos)
+    - [Funcionalidades](#funcionalidades-arcos)
   - [Gráfico de Bolhas](#gráfico-de-bolhas)
-    - [Premissa](#premissa)
-    - [Pré-processamento dos dados](#pré-processamento-dos-dados)
-    - [Funcionalidades](#funcionalidades)
+    - [Premissa](#premissa-bolhas)
+    - [Pré-processamento dos dados](#pré-processamento-dos-dados-bolhas)
+    - [Funcionalidades](#funcionalidades-bolhas)
   - [Gráfico de linhas](#gráfico-de-linhas)
 - [Conclusões](#conclusões)
 <!--toc:end-->
@@ -76,6 +76,7 @@ seguintes perguntas:
 3. Qual a produtividade dos docentes em função do tempo e,
 
    - como esta se compara aos demais docentes deste mesmo instituto?
+   - quais são os artigos, por ano, de cada professor?
 
 Para responder a estas perguntas realizamos uma pesquisa que consistiu em três
 etapas: (1.) levantamento dos dados dos pesquisadores, (2.) estruturação dos
@@ -98,13 +99,10 @@ congruentes com os objetivos da análise. Neste relatório, descrevemos
 
 Ao término de nossa pesquisa encontramos notável presença de colaboração entre
 os docentes deste instituto, e alguns agrupamentos entre aqueles mais
-colaborativos. Verificamos também que grupos de pesquisa que tratam de áreas
-parecidas possuem produções científicas (artigos) que tratam de temas/áreas
-semelhantes também.
-
-> [!WARNING]
->
-> Adicionar conclusões do Bom Dia
+colaborativos. Além disso, verificamos que grupos de pesquisa que tratam de
+áreas parecidas possuem produções científicas (artigos) que tratam de
+temas/Áreas semelhantes. Conclusões essas que são auxiliadas por uma noção
+temporal de todo o desenvolvimento do(s) pesquisador(es) ao longo dos anos.
 
 ## Ambiente de desenvolvimento
 
@@ -385,9 +383,39 @@ se ajusta aos pontos exibidos, como mostra a imagem acima.
 
 ### Gráfico de linhas
 
-> [!WARNING]
->
-> Adicionar descrição por parte do Bom Dia
+![Gráfico de Linhas](imgs/line_plot1.png)
+
+> Visualização do gráfico de linhas com o pesquisador Jean selecionado
+
+O gráfico de linhas é ideal para representar a evolução de uma variável ao longo
+do tempo. No nosso caso, ele mostra a quantidade de artigos publicados por cada
+professor em diferentes anos. Cada linha corresponde a um pesquisador
+específico, enquanto o eixo X representa os anos e o eixo Y indica o número de
+publicações.
+
+O uso desse tipo de gráfico é adequado para a proposta, pois evidencia padrões
+temporais de produção científica e diferenças entre trajetórias das pessoas. A
+partir dele, é possível identificar, por exemplo, mudanças de foco ao longo do
+tempo ou correlações com eventos externos. Essa representação permite observar
+além das tendências individuais dos pesquisadores, analisar questões como
+crescimento de temas específicos ao mostrar exatamente os papers publicados
+naquele ano. Posteriormente, é pretendido fazer um buscador por palavras chaves
+para se ter uma noção temporal dos temas que cada pesquisador está lidando
+atualmente por exemplo.
+
+Para justamente esses casos de evolução temporal com mais de um pesquisador, o
+gráfico adapta questões de cor, bem como a legenda utilizada no hover.
+
+![Gráfico de Linhas](imgs/line_plot_cor.png)
+
+> Gráfico de linhas demonstrando mudança de cor quando existe mais de um
+> pesquisador. Nota especial para a combinação de cores quando ambos possuem a
+> mesma quantidade de artigos.
+
+![Gráfico de Linhas](imgs/line_plot_legenda.png)
+
+> Gráfico de linhas demonstrando mudança de texto no hover com o aparecimento de
+> mais pesquisadores.
 
 ## Conclusões
 
@@ -417,9 +445,11 @@ Educação". Também foi possível observar os grupos com mais e menos artigos q
 foram "Modelagem de Risco" (567 artigos) e "Computação Aplicada a Educação" (17
 artigos) respectivamente.
 
-> [!WARNING]
->
-> Adicionar conclusões das visualizações do Bom Dia
+O gráfico de linhas também cumpriu as expectativas ao fornecer uma visão
+temporal do desenvolvimento dos pesquisadores. Por exemplo, sabendo de dois
+pesquisadores que colaboraram através do diagrama de arcos, podemos usar essa
+informação para procurá-los no gráfico de linhas e verificar a trajetória
+inteira de ambos além de suas interações.
 
 O acréscimo de novas formas de interações pode auxiliar nas visualizações. Por
 exemplo, a adição de um _slider_ ao diagrama de arcos que permita a filtragem
@@ -431,8 +461,7 @@ No caso do gráfico de bolhas, a inserção de um zoom semântico pode facilitar
 visualização de bolhas que estejam muito próximas entre si, aumentando a
 qualidade das análises que podem ser feitas em cima da visualização.
 
-> [!WARNING]
->
-> Adicionar possibilidades de novas interações para as visualizações do Bom Dia
+No caso do gráfico de linhas, fazer um buscador por palavras chaves, permitindo
+ver linhas de pesquisas inteiras de um ou vários professores.
 
 [^1]: LEVY, Bruno; ZHANG, Richard. Spectral Geometry Processing. 1 jan. 2009.
