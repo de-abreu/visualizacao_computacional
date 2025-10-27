@@ -384,7 +384,7 @@ se ajusta aos pontos exibidos, como mostra a imagem acima.
 
 O gráfico de linhas é ideal para representar a evolução de uma variável ao longo do tempo. No nosso caso, ele mostra a quantidade de artigos publicados por cada professor em diferentes anos. Cada linha corresponde a um pesquisador específico, enquanto o eixo X representa os anos e o eixo Y indica o número de publicações.
 
-O uso desse tipo de gráfico é adequado para a proposta, pois evidencia padrões temporais de produção científica e diferenças entre trajetórias das pessoas. A partir dele, é possível identificar, por exemplo, mudanças de foco ao longo do tempo ou correlações com eventos externos. Essa representação permite observar além das tendências individuais dos pesquisadores, analisar questões como crescimento  de temas específicos ao mostrar exatamente os papers publicados naquele ano. Posteriormente, é pretendido fazer um buscador por palavras chaves para se ter uma noção temporal dos temas que cada pesquisador está lidando atualmente por exemplo.
+A partir dele, é possível identificar mudanças de foco ao longo do tempo ou correlações com eventos externos, além das tendências individuais dos pesquisadores e também análise de crescimento de temas específicos ao mostrar exatamente os artigos publicados naquele ano. Posteriormente, é pretendido fazer um buscador por palavras chaves para se ter uma noção temporal dos temas que cada pesquisador está lidando atualmente por exemplo.
 
 Para justamente esses casos de evolução temporal com mais de um pesquisador, o gráfico adapta questões de cor, bem como a 
 legenda utilizada no hover.
