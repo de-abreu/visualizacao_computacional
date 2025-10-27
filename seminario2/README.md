@@ -57,7 +57,7 @@ levantamento de dados pertinentes a vivência universitária no ICMC. Em
 particular, focamo-nos na exploração dos dados oferecidos pela plataforma
 [Currículo Lattes](https://lattes.cnpq.br/), acerca da produção científica do
 atual corpo docente deste instituto, conforme consta no
-[site](https://icmc.usp.br/pessoas) deste. Pretendeu-se, ao final, responder as
+[site](https://ICMC.usp.br/pessoas) deste. Pretendeu-se, ao final, responder as
 seguintes perguntas:
 
 1. Quais projetos de pesquisa ou artigos científicos foram resultados da
@@ -67,7 +67,7 @@ seguintes perguntas:
    - com quem estes colaboram?
    - quantas vezes estes já colaboraram?
 
-2. Como grupos de pesquisa diferentes do icmc se relacionam entre si quando
+2. Como grupos de pesquisa diferentes do ICMC se relacionam entre si quando
    análisamos os títulos dos artigos publicados por seus membros docentes e,
 
    - quais os grupos com mais e menos artigos?
@@ -98,8 +98,8 @@ congruentes com os objetivos da análise. Neste relatório, descrevemos
 
 Ao término de nossa pesquisa encontramos notável presença de colaboração entre
 os docentes deste instituto, e alguns agrupamentos entre aqueles mais
-colaborativos. Vereficamos também que grupos de pesquisa que tratam de áreas
-parecidas possuem produções científicas (artigos) que tratam de temas/áreas 
+colaborativos. Verificamos também que grupos de pesquisa que tratam de áreas
+parecidas possuem produções científicas (artigos) que tratam de temas/áreas
 semelhantes também.
 
 > [!WARNING]
@@ -183,14 +183,14 @@ A raspagem de dados em nosso projeto foi feita nas seguintes etapas:
   alfabéticas opostas.
 
 - Especificamente para o Gráfico de Bolhas, também foi feita a geração do
-  arquivo `webcrawlers/icmc_grupos_professores.csv` contendo os grupos de pesquisa
-  e os professores que os compõe, extraídos do site do icmc. Isso foi feito pela
-  execução do script `webcrawlers/extracao_grupos_prof.py`. Dos 126 docentes
-  analisados 28 não constavam em nenhum dos 32 grupos de pesquisa no site do icmc,
-  esses professores em específico foram manualmente mapeados de acordo com o site
-  do icmc em sua grande área de atuação (Computação, Matemática, Matemática
-  Aplicada e Estatística). Esse mapeamento foi armazenado em
-  `webcrawlers/professores_sem_grupo.txt`.
+  arquivo `webcrawlers/ICMC_grupos_professores.csv` contendo os grupos de
+  pesquisa e os professores que os compõe, extraídos do site do ICMC. Isso foi
+  feito pela execução do script `webcrawlers/extracao_grupos_prof.py`. Dos 126
+  docentes analisados 28 não constavam em nenhum dos 32 grupos de pesquisa no
+  site do ICMC, esses professores em específico foram manualmente mapeados de
+  acordo com o site do ICMC em sua grande área de atuação (Computação,
+  Matemática, Matemática Aplicada e Estatística). Esse mapeamento foi armazenado
+  em `webcrawlers/professores_sem_grupo.txt`.
 
 ## Modelagem do Banco de Dados
 
@@ -277,16 +277,17 @@ quais este pesquisador colaborou em ordem cronológica.
 
 > Visualização do gráfico de bolhas imediatamente após este ter sido carregado
 
-O gráfico de bolhas é um tipo gráfico de dispersão acrescido de uma dimensão 
+O gráfico de bolhas é um tipo gráfico de dispersão acrescido de uma dimensão
 representada pelos tamanhos da bolhas. Assim como um gráfico de dispersão, ele
 mapeia pontos (ou no caso bolhas) em um espaço bidimensional de acordo com as
 variáveis representadas pelos eixos X e Y. No nosso caso as bolhas são grupos de
 pesquisa e elas representam um conjunto de pontos que seriam artigos publicados
 por professores daquele grupo, sendo a posição da bolha a média das posições dos
-artigos e seu tamanho a quantidade de artigos que ela engloba. Nessa visualização
-os eixos X e Y representam variáveis resultantes da redução de dimensionalidade
-de embeddings dos títulos dos artigos, dessa forma a posição dos artigos no
-gráfico representaria o quão semelhante seus títulos são uns dos outros.
+artigos e seu tamanho a quantidade de artigos que ela engloba. Nessa
+visualização os eixos X e Y representam variáveis resultantes da redução de
+dimensionalidade de embeddings dos títulos dos artigos, dessa forma a posição
+dos artigos no gráfico representaria o quão semelhante seus títulos são uns dos
+outros.
 
 Esse tipo de representação é adequada para nossa proposta pois permite
 identificar claras relações de proximidade/distância entre grupos de pesquisa
@@ -304,8 +305,9 @@ colunas e tipos de dados são:
 | :-------- | :------ |
 | String    | String  |
 
-Além disso, também foi feita a leitura do arquivo `webcrawlers/icmc_grupos_professores.csv`
-contendo a tabela de grupos no seguinte formato:
+Além disso, também foi feita a leitura do arquivo
+`webcrawlers/ICMC_grupos_professores.csv` contendo a tabela de grupos no
+seguinte formato:
 
 | grupo  | professor |
 | :----- | :-------- |
@@ -320,24 +322,24 @@ arquivo `webcrawlers/professores_sem_grupo.txt` no formato:
 | String    | String |
 
 Depois de obter os dados, em um primeiro momento foram gerados embeddings dos
-valores de todos os artigos, assim como dos valores únicos dos grupos de pesquisa
-e das macro áreas usando "sentence-transformers/all-MiniLM-L6-v2", valores que
-serão importantes posteriormente.
+valores de todos os artigos, assim como dos valores únicos dos grupos de
+pesquisa e das macro áreas usando "sentence-transformers/all-MiniLM-L6-v2",
+valores que serão importantes posteriormente.
 
 Em seguida relacionamos os artigos com os grupos ao qual pertencem por meio dos
 professores, que são o atributo comum a ambas tabelas. No entanto, alguns
 professores possuem mais de um grupo de pesquisa do qual fazem parte, nesse caso
-como critério de desempate calculamos a similaridade de cosseno entre o embedding
-do artigo e os embeddings dos grupos do qual o professor faz parte. A tabela de
-artigos fica assim então:
+como critério de desempate calculamos a similaridade de cosseno entre o
+embedding do artigo e os embeddings dos grupos do qual o professor faz parte. A
+tabela de artigos fica assim então:
 
 | article | grupo  |
 | :------ | :----- |
 | String  | String |
 
-Então é realizada a redução de dimensionalidade dos embeddings dos artigos usando
-a técnica t-SNE. Os vetores de valor X e Y resultantes são então juntados a
-tabela de artigos, fornecendo assim as coordenadas dos nossos pontos, ficando:
+Então é realizada a redução de dimensionalidade dos embeddings dos artigos
+usando a técnica t-SNE. Os vetores de valor X e Y resultantes são então juntados
+a tabela de artigos, fornecendo assim as coordenadas dos nossos pontos, ficando:
 
 | article | grupo  | X     | Y     |
 | :------ | :----- | :---- | :---- |
@@ -346,7 +348,7 @@ tabela de artigos, fornecendo assim as coordenadas dos nossos pontos, ficando:
 A última etapa antes da visualização consiste em associar os valores das macro
 áreas aos artigos. Isso é feito de duas maneiras, a primeira é mapeando os
 artigos que possuem grupos de pesquisa com as macros correspondentes a estes
-grupos, informação que foi pegada do site do icmc e representada em formato de
+grupos, informação que foi pegada do site do ICMC e representada em formato de
 dicionário. A segunda maneira se refere a artigos sem grupo de pesquisa, esses
 são os artigos que na etapa de mapeamento de grupo estavam associados a
 professores cuja informação do grupo não estava disponível. Nesse caso usamos os
@@ -368,9 +370,9 @@ das bolhas representam a Macro área da qual fazem parte.
 
 #### Funcionalidades
 
-Para a geração do gráfico, optamos por usar a biblioteca `plotly`.
-Com ela além de plotar adequadamente o resultado como mostra a figura anterior,
-foi possível adicionar efeitos interativos que enriquecessem a visualização.
+Para a geração do gráfico, optamos por usar a biblioteca `plotly`. Com ela além
+de plotar adequadamente o resultado como mostra a figura anterior, foi possível
+adicionar efeitos interativos que enriquecessem a visualização.
 
 ![Interação com o Gráfico de Bolhas](imgs/bubble_plot_interaction.png)
 
@@ -402,31 +404,32 @@ e a posição que ocupam no diagrama. Dentre os pesquisadores já citados,
 Francisco colabora com Vicente (36 ocasiões) mais que com qualquer outro
 pesquisador, e por vez o mesmo é verdadeiro entre Agma e Caetano (53 ocasiões).
 
-O gráfico de bolhas nos trouxe diversas informações acerca dos grupos de pesquisa
-e de como eles se relacionam entre si. Foi mostrado que apenas com os títulos dos
-artigos publicados pelo grupo é possível representar de maneira satisfatória a
-posição que eles ocupam em um espaço 2d, no qual a proximidade entre grupos
-representa semelhança em sua produção científica. Dessa forma percebemos que grupos
-dentro de uma mesma macro área (Computação, Matemática, Matemática Aplicada e
-Estatística) tendem a serem mais próximos, o mesmo vale também para grupos dentro
-de macro áreas diferentes mas que tem algum aspecto semelhante, como é o caso de
-"Educação Matemática" e "Computação Aplicada a Educação". Também foi possível
-observar os grupos com mais e menos artigos que foram "Modelagem de Risco" (567 
-artigos) e "Computação Aplicada a Educação" (17 artigos) respectivamente.
+O gráfico de bolhas nos trouxe diversas informações acerca dos grupos de
+pesquisa e de como eles se relacionam entre si. Foi mostrado que apenas com os
+títulos dos artigos publicados pelo grupo é possível representar de maneira
+satisfatória a posição que eles ocupam em um espaço 2d, no qual a proximidade
+entre grupos representa semelhança em sua produção científica. Dessa forma
+percebemos que grupos dentro de uma mesma macro área (Computação, Matemática,
+Matemática Aplicada e Estatística) tendem a serem mais próximos, o mesmo vale
+também para grupos dentro de macro áreas diferentes mas que tem algum aspecto
+semelhante, como é o caso de "Educação Matemática" e "Computação Aplicada a
+Educação". Também foi possível observar os grupos com mais e menos artigos que
+foram "Modelagem de Risco" (567 artigos) e "Computação Aplicada a Educação" (17
+artigos) respectivamente.
 
 > [!WARNING]
 >
 > Adicionar conclusões das visualizações do Bom Dia
 
 O acréscimo de novas formas de interações pode auxiliar nas visualizações. Por
-exemplo, a adição de um _slider_ ao diagrama de arcos que permita a filtragem por
-período de tempo pode permitir avaliar a ocorrência de colaborações se avolumar em
-função do tempo, ou simplesmente tornar menos poluída a esta visualização
-considerando um período.
+exemplo, a adição de um _slider_ ao diagrama de arcos que permita a filtragem
+por período de tempo pode permitir avaliar a ocorrência de colaborações se
+avolumar em função do tempo, ou simplesmente tornar menos poluída a esta
+visualização considerando um período.
 
 No caso do gráfico de bolhas, a inserção de um zoom semântico pode facilitar a
-visualização de bolhas que estejam muito próximas entre si, aumentando a qualidade
-das análises que podem ser feitas em cima da visualização.
+visualização de bolhas que estejam muito próximas entre si, aumentando a
+qualidade das análises que podem ser feitas em cima da visualização.
 
 > [!WARNING]
 >
