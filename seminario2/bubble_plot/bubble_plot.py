@@ -21,12 +21,8 @@ def load_articles(engine = ENGINE):
         JOIN articles    a ON au.article_id = a.id
         JOIN researchers r ON au.author_id  = r.lattes_id
     """
-    df = pd.read_sql_query(query, engine)
-
-    arts = (
-        df.groupby("professor", as_index=False)["article"]
-        .agg(list)
-    )
+    arts = pd.read_sql_query(query, engine)
+    print(f"Artigos: {len(arts)} | Professores: {len(set(arts['professor']))}")
 
     return arts
 
@@ -51,19 +47,6 @@ def load_macros_faltantes(path = "webcrawlers/professores_sem_grupo.txt"):
         macros[parts[0]] = parts[1:]
 
     return macros
-
-# 
-def prepare_articles(df, groups):
-    """Explode artigos."""
-
-    arts = (
-        df[["professor", "article"]]
-        .explode("article")
-        .reset_index(drop=True)
-    )
-
-    print(f"Artigos: {len(arts)} | Professores: {len(set(arts['professor']))}")
-    return arts
 
 # Gerando embeddings
 def embeddings(arts, groups, macros):
