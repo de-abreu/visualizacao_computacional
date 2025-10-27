@@ -98,11 +98,13 @@ congruentes com os objetivos da análise. Neste relatório, descrevemos
 
 Ao término de nossa pesquisa encontramos notável presença de colaboração entre
 os docentes deste instituto, e alguns agrupamentos entre aqueles mais
-colaborativos.
+colaborativos. Vereficamos também que grupos de pesquisa que tratam de áreas
+parecidas possuem produções científicas (artigos) que tratam de temas/áreas 
+semelhantes também.
 
 > [!WARNING]
 >
-> Adicionar conclusões do Lucas e Bom Dia
+> Adicionar conclusões do Bom Dia
 
 ## Ambiente de desenvolvimento
 
