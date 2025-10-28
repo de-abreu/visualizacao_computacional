@@ -1,6 +1,7 @@
 *.pdf
 .kaggle.json
 .ipynb_checkpoints/
+.pip-build/
 .venv/
 **/venv/
 **/**cache**
