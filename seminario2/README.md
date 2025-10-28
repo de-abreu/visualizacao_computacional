@@ -67,8 +67,8 @@ seguintes perguntas:
    - com quem estes colaboram?
    - quantas vezes estes já colaboraram?
 
-2. Como grupos de pesquisa diferentes do ICMC se relacionam entre si quando
-   análisamos os títulos dos artigos publicados por seus membros docentes e,
+2. Como grupos de pesquisa diferentes do ICMC se relacionam quando analisamos os
+   títulos dos artigos publicados por seus membros docentes e,
 
    - quais os grupos com mais e menos artigos?
    - quais grupos possuem artigos que tratam de temas/áreas parecidas?
@@ -260,16 +260,16 @@ conforme interações do usuário via _callbacks_.
 
 ![Interação com o Diagrama de Arco](imgs/arc_diagram_interaction.png)
 
-Nosso diagrama implementa uma interação quando o o usuário posiciona o mouse
-sobre um ponto. Ao fazê-lo, todos os demais pontos e arcos não conectados a ele
-têm sua opacidade reduzida, dando destaque apenas às conexões relevantes ao
-pesquisador pelo ponto representado. Ainda, uma tabela sob o diagrama é
+Nosso diagrama implementa uma interação em que quando o o usuário posiciona o
+mouse sobre um ponto todos os demais pontos e arcos não conectados a ele têm sua
+opacidade reduzida, de tal forma destacando apenas às conexões relevantes ao
+pesquisador por aquele ponto representado. Ainda, uma tabela sob o diagrama é
 atualizada com os valores filtrados do Data Frame que lista os projetos para os
 quais este pesquisador colaborou em ordem cronológica.
 
 ### Gráfico de Bolhas
 
-<h4 id="premissa-bolhas">Premissa</h4>
+<h4 id="premissa-bolhas">Pré-processamento dos dados</h4>
 
 ![Gráfico de Bolhas](imgs/bubble_plot.png)
 
@@ -304,7 +304,7 @@ colunas e tipos de dados são:
 | String    | String  |
 
 Além disso, também foi feita a leitura do arquivo
-`webcrawlers/ICMC_grupos_professores.csv` contendo a tabela de grupos no
+`webcrawlers/icmc_grupos_professores.csv` contendo a tabela de grupos no
 seguinte formato:
 
 | grupo  | professor |
@@ -442,23 +442,21 @@ Educação". Também foi possível observar os grupos com mais e menos artigos q
 foram "Modelagem de Risco" (567 artigos) e "Computação Aplicada a Educação" (17
 artigos) respectivamente.
 
-O gráfico de linhas também cumpriu as expectativas ao fornecer uma visão
-temporal do desenvolvimento dos pesquisadores. Por exemplo, sabendo de dois
-pesquisadores que colaboraram através do diagrama de arcos, podemos usar essa
-informação para procurá-los no gráfico de linhas e verificar a trajetória
-inteira de ambos além de suas interações.
+O gráfico de linhas demonstra uma visão temporal do desenvolvimento dos
+pesquisadores. Por exemplo, sabendo de dois pesquisadores que colaboraram
+através do diagrama de arcos, podemos usar essa informação para procurá-los no
+gráfico de linhas e verificar a trajetória inteira de ambos além de suas
+interações.
 
-O acréscimo de novas formas de interações pode auxiliar nas visualizações. Por
-exemplo, a adição de um _slider_ ao diagrama de arcos que permita a filtragem
-por período de tempo pode permitir avaliar a ocorrência de colaborações se
-avolumar em função do tempo, ou simplesmente tornar menos poluída a esta
-visualização considerando um período.
-
-No caso do gráfico de bolhas, a inserção de um zoom semântico pode facilitar a
-visualização de bolhas que estejam muito próximas entre si, aumentando a
-qualidade das análises que podem ser feitas em cima da visualização.
-
-No caso do gráfico de linhas, fazer um buscador por palavras chaves, permitindo
-ver linhas de pesquisas inteiras de um ou vários professores.
+Como sugestão para a continuidade deste trabalho, temos que acréscimo de novas
+formas de interações pode auxiliar nas visualizações. Por exemplo, a adição de
+um _slider_ ao diagrama de arcos que permita a filtragem por período de tempo
+pode permitir avaliar a ocorrência de colaborações se avolumar em função do
+tempo, ou simplesmente tornar menos poluída a esta visualização considerando um
+período. No caso do gráfico de bolhas, a inserção de um zoom semântico pode
+facilitar a visualização de bolhas que estejam muito próximas entre si,
+aumentando a qualidade das análises que podem ser feitas em cima da
+visualização. No caso do gráfico de linhas, fazer um buscador por palavras
+chaves, permitindo ver linhas de pesquisas inteiras de um ou vários professores.
 
 [^1]: LEVY, Bruno; ZHANG, Richard. Spectral Geometry Processing. 1 jan. 2009.
