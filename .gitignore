@@ -1,10 +1,13 @@
-*.pdf
 .kaggle.json
 .ipynb_checkpoints/
 .pip-build/
 .venv/
 **/venv/
 **/**cache**
+
+# Deliverables
+*.pdf
+*.mp4
 
 # Devenv
 .devenv*
