@@ -1,26 +1,13 @@
 .kaggle.json
 .ipynb_checkpoints/
-.pip-build/
 .venv/
 **/venv/
 **/**cache**
+.build/
 
 # Deliverables
 *.pdf
 *.mp4
-
-# Devenv
-.devenv*
-devenv.local.nix
-
-# direnv
-.direnv
-
-# pre-commit
-.pre-commit-config.yaml
-
-# direnv
-.envrc
 
 # Devenv
 .devenv*

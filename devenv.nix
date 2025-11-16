@@ -1,8 +1,4 @@
-{
-  pkgs,
-  config,
-  ...
-}: {
+{pkgs, ...}: {
   packages = with pkgs; [
     chromedriver
     chromium
@@ -11,6 +7,15 @@
     zlib
   ];
 
+  # Set up TMPDIR before Python virtual environment creation
+  tasks."setup:tmpdir" = {
+    exec = ''
+      mkdir -p .build
+      export TMPDIR=$PWD/.build
+    '';
+    before = ["devenv:python:virtualenv"];
+  };
+
   languages.python = {
     enable = true;
     venv = {
@@ -18,8 +23,4 @@
       requirements = ./requirements.txt;
     };
   };
-  # Due to size restrictions of the /tmp folder, we need to modify the folder
-  # pip uses to install "sentence-transformer", a dependency listed in
-  # requirements.txt.
-  env.TMPDIR = "${config.devenv.runtime}";
 }
