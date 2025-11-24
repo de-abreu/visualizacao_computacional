@@ -1,0 +1,219 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Bubble Plot</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+    }
+    .caixa-explicacao {
+      position: absolute;
+      background: yellow;
+      padding: 6px 8px;
+      font-size: 11px;
+      opacity: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <svg id="grafico" width="1000" height="700"></svg>
+  <div id="explicacao" class="caixa-explicacao"></div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <script>
+    
+    
+    function fisheye(ponto, foco, raio, distorcao) {
+      var dist = ponto - foco;
+      var distAbs = Math.abs(dist);
+      if (distAbs >= raio) return ponto;
+      var distNorm = distAbs / raio;
+      var modeloDistorcao = (1 + distorcao) * distNorm / (1 + distorcao * distNorm);
+      return foco + dist * (modeloDistorcao / distNorm);
+    }
+
+    d3.json("bubbles.json").then(dados => {
+
+      // svg
+      var svg = d3.select("#grafico");
+
+      // definições
+        // dimensões
+      var largura = 1000;
+      var altura = 700;
+      var margens = { topo: 80, direita: 160, baixo: 60, esquerda: 60 };
+      var larguraGrafico = largura - margens.esquerda - margens.direita;
+      var alturaGrafico = altura - margens.topo - margens.baixo;
+        // limites
+      var limiteX = d3.extent(dados, d => d.x);
+      var limiteY = d3.extent(dados, d => d.y);
+        // escalas (x, y, n), que são as dimensões que um bubble plot representa
+      var escalaX = d3.scaleLinear().domain([limiteX[0] - 4, limiteX[1] + 4])
+        .range([0, larguraGrafico]);
+      var escalaY = d3.scaleLinear().domain([limiteY[0] - 4, limiteY[1] + 4])
+        .range([alturaGrafico, 0]);
+      var escalaZoomX = escalaX;
+      var escalaZoomY = escalaY;
+      var escalaN = d3.scaleSqrt() // aqui a gente usou a raiz para fazermos a escala por área e não raio (que é o mais adequado como visto em aula)
+        .domain(d3.extent(dados, d => d.n)).range([4, 20]);
+        // cores, que é a quarta dimensão representada, único atributo categórico (macro áreas)
+      var macros = Array.from(new Set(dados.map(d => d.macro)));
+      var corMacro = d3.scaleOrdinal().domain(macros).range(d3.schemeCategory10);
+        // parametros para o fisheye, ajustamos para os valores que achamos mais adequados
+      var faixaX = limiteX[1] - limiteX[0];
+      var faixaY = limiteY[1] - limiteY[0];
+      var raioX = 0.5 * faixaX;
+      var raioY = 0.5 * faixaY;
+      var distorcaoX = 2.0;
+      var distorcaoY = 2.0;
+      var ultimoFocoX = -100; // valor inicial
+      var ultimoFocoY = -100;
+
+      // titulo
+      svg.append("text").attr("x", largura / 2).attr("y", 30).attr("text-anchor", "middle").attr("font-size", 18)
+        .text("Relação entre Grupos de Pesquisa do ICMC baseada nas embeddings dos títulos dos artigos publicados");
+
+      // main
+      var main = svg.append("g").attr("transform", `translate(${margens.esquerda},${margens.topo})`);
+
+      // caixinha de explicacao
+      var explicacao = d3.select("#explicacao");
+
+      // eixos
+      var eixoX = main.append("g").attr("transform", `translate(0,${alturaGrafico})`)
+        .call(d3.axisBottom(escalaZoomX));
+      var eixoY = main.append("g").call(d3.axisLeft(escalaZoomY));
+
+      // rotulos dos eixos
+      svg.append("text").attr("x", margens.esquerda + larguraGrafico / 2)
+        .attr("y", altura - 5).attr("text-anchor", "middle").attr("font-size", 14).text("Eixo X");
+      svg.append("text").attr("transform", `translate(15, ${margens.topo + alturaGrafico / 2}) rotate(-90)`)
+        .attr("text-anchor", "middle").attr("font-size", 14).text("Eixo Y");
+
+      // rotulos das bolhas
+      var rotulos = main.selectAll("text-rotulo")
+        .data(dados)
+        .enter()
+        .append("text")
+        .text(d => d.grupo)
+        .attr("x", d => escalaZoomX(d.x))
+        .attr("y", d => escalaZoomY(d.y) - escalaN(d.n) - 2)
+        .attr("font-size", 10)
+        .attr("text-anchor", "middle")
+        .attr("class", "text-rotulo");
+
+      // bolhas
+      var bolhas = main.selectAll("circle-bolha")
+        .data(dados)
+        .enter()
+        .append("circle")
+        .attr("cx", d => escalaZoomX(d.x))
+        .attr("cy", d => escalaZoomY(d.y))
+        .attr("r", d => escalaN(d.n))
+        .attr("fill", d => corMacro(d.macro));
+
+      // legenda
+      var legenda = svg.append("g")
+        .attr("transform", `translate(${largura - margens.direita}, ${margens.topo})`);
+        // itens da legenda
+      var macrosAtivas = new Set(macros);
+      var itensLegenda = legenda.selectAll("g")
+        .data(macros)
+        .enter()
+        .append("g")
+        .attr("transform", (macro, i) => `translate(0, ${i * 20})`)
+        .on("click", (event, macro) => {
+          if (macrosAtivas.has(macro)) {
+            macrosAtivas.delete(macro);
+          } else {
+            macrosAtivas.add(macro);
+          }
+          main.selectAll("circle")
+            .style("display", d => macrosAtivas.has(d.macro) ? "block" : "none");
+          main.selectAll(".text-rotulo")
+            .style("display", d => macrosAtivas.has(d.macro) ? "block" : "none");
+        });
+          //itens dos itens da legenda
+      itensLegenda.append("rect")
+        .attr("width", 14)
+        .attr("height", 14)
+        .attr("fill", m => corMacro(m));
+      itensLegenda.append("text")
+        .attr("x", 18)
+        .attr("y", 10)
+        .attr("font-size", 12)
+        .text(m => m);
+
+
+      // Funções
+
+      // Ver caixinha de explicacao
+      bolhas
+        .on("mouseover", (evento, d) => {explicacao.style("opacity", 1)
+            .text(`${d.grupo} | Macro: ${d.macro} | n=${d.n}`);
+        })
+        .on("mousemove", evento => {
+          explicacao.style("left", (evento.pageX + 20) + "px")
+            .style("top", (evento.pageY + 20) + "px");
+        })
+        .on("mouseout", () => {explicacao.style("opacity", 0);});
+
+      // Aplicação do fisheye
+      function aplicarLupa(fx, fy) {
+        ultimoFocoX = fx;
+        ultimoFocoY = fy;
+
+        bolhas
+          .attr("cx", d => escalaZoomX(fisheye(d.x, fx, raioX, distorcaoX)))
+          .attr("cy", d => escalaZoomY(fisheye(d.y, fy, raioY, distorcaoY)));
+
+        rotulos
+          .attr("x", d => escalaZoomX(fisheye(d.x, fx, raioX, distorcaoX)))
+          .attr("y", d => escalaZoomY(fisheye(d.y, fy, raioY, distorcaoY)) - escalaN(d.n) - 2);
+
+        eixoX.selectAll(".tick")
+          .attr("transform", valorTick => {
+            var xDist = escalaZoomX(fisheye(valorTick, fx, raioX, distorcaoX));
+            return `translate(${xDist},0)`;
+          });
+
+        eixoY.selectAll(".tick")
+          .attr("transform", valorTick => {
+            var yDist = escalaZoomY(fisheye(valorTick, fy, raioY, distorcaoY));
+            return `translate(0,${yDist})`;
+          });
+      }
+
+      // Zoom
+      var zoom = d3.zoom()
+        .scaleExtent([0.5, 10])
+        .translateExtent([[0, 0], [larguraGrafico, alturaGrafico]])
+        .on("zoom", evento => {
+          var transformacao = evento.transform;
+          escalaZoomX = transformacao.rescaleX(escalaX);
+          escalaZoomY = transformacao.rescaleY(escalaY);
+          eixoX.call(d3.axisBottom(escalaZoomX));
+          eixoY.call(d3.axisLeft(escalaZoomY));
+          aplicarLupa(ultimoFocoX, ultimoFocoY);
+        });
+
+      svg.call(zoom);
+
+      // Aplicação do fisheye onde passa o mouse
+      svg.on("mousemove", evento => {
+        var [mx, my] = d3.pointer(evento);
+        var fx = escalaZoomX.invert(mx - margens.esquerda);
+        var fy = escalaZoomY.invert(my - margens.topo);
+        aplicarLupa(fx, fy);
+      });
+
+      aplicarLupa(ultimoFocoX, ultimoFocoY);
+    });
+  </script>
+</body>
+</html>
+

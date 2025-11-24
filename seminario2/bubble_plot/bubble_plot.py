@@ -5,7 +5,10 @@ from sqlalchemy import create_engine
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.manifold import TSNE
+from umap import UMAP
 import plotly.express as px
+from dash import Dash, dcc, html, Input, Output
+import plotly.graph_objects as go
 
 DATABASE_PATH = f"{Path().resolve()}/database/lattes.db"
 ENGINE = create_engine(f"sqlite:///{DATABASE_PATH}")
@@ -94,11 +97,16 @@ def get_groups(arts, emb_articles, groups, emb_groups):
     arts["grupo"] = best_group
     return arts
 
-# Reduzindo Dimensionalidade usando t-SNE
-def dim_reduction(embeddings):
-    """Reduz embeddings para 2D via t-SNE."""
+# Reduzindo Dimensionalidade usando UMAP
+def dim_reduction2(embeddings):
+    """Reduz embeddings para 2D via TSNE."""
     tsne = TSNE(n_components=2, metric="cosine", random_state=42)
     return tsne.fit_transform(embeddings)
+
+def dim_reduction(embeddings):
+    """Reduz embeddings para 2D via UMAP."""
+    umap = UMAP(n_components=2, metric="cosine", random_state=42)
+    return umap.fit_transform(embeddings)
 
 # Mapeando Macro Áreas
 def map_macro(arts, emb_articles, macros_faltantes, emb_macros):

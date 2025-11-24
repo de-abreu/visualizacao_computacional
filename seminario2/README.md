@@ -72,6 +72,8 @@ seguintes perguntas:
 
    - quais os grupos com mais e menos artigos?
    - quais grupos possuem artigos que tratam de temas/áreas parecidas?
+   - é possível analisar com mais detalhes grupos próximos sem perder a informação
+     global do posicionamento dos grupos?
 
 3. Qual a produtividade dos docentes em função do tempo e,
 
@@ -269,7 +271,7 @@ quais este pesquisador colaborou em ordem cronológica.
 
 ### Gráfico de Bolhas
 
-<h4 id="premissa-bolhas">Pré-processamento dos dados</h4>
+<h4 id="premissa-bolhas">Premissa</h4>
 
 ![Gráfico de Bolhas](imgs/bubble_plot.png)
 
@@ -336,8 +338,10 @@ tabela de artigos fica assim então:
 | String  | String |
 
 Então é realizada a redução de dimensionalidade dos embeddings dos artigos
-usando a técnica t-SNE. Os vetores de valor X e Y resultantes são então juntados
-a tabela de artigos, fornecendo assim as coordenadas dos nossos pontos, ficando:
+usando a técnica UMAP, boa para capturar estruturas locais, mas sem perder tanta
+informação global, diferente de um TSNE. Os vetores de valor X e Y resultantes são
+então juntados a tabela de artigos, fornecendo assim as coordenadas dos nossos
+pontos, ficando:
 
 | article | grupo  | X     | Y     |
 | :------ | :----- | :---- | :---- |
@@ -368,7 +372,7 @@ das bolhas representam a Macro área da qual fazem parte.
 
 <h4 id="funcionalidades-bolhas">Funcionalidades</h4>
 
-Para a geração do gráfico, optamos por usar a biblioteca `plotly`. Com ela além
+Para a geração do gráfico, optamos por usar a biblioteca `D3.js`. Com ela, além
 de plotar adequadamente o resultado como mostra a figura anterior, foi possível
 adicionar efeitos interativos que enriquecessem a visualização.
 
@@ -377,9 +381,30 @@ adicionar efeitos interativos que enriquecessem a visualização.
 No nosso caso, ao passar o cursor por cima de uma bolha as informações acerca da
 mesma são exibidas de forma clara, com o seu nome (indicando o grupo de pesquisa
 que representa), a macro área ao qual ela faz parte e a quantidade de arquivos
-que ela engloba. Além disso, ao clicar na legenda é possível isolar uma única
-macro área facilitando muitas vezes uma análise mais precisa, já que o gráfico
-se ajusta aos pontos exibidos, como mostra a imagem acima.
+que ela engloba. Outra funcionalidade implementada foi de isolar uma única macro
+área ao clicar na legenda, facilitando muitas vezes uma análise mais específica
+como mostra a imagem acima.
+
+Além disso, implementamos uma nova funcionalidade para a segunda entrega que é o
+efeito fisheye. Como é possível ver nas figuras abaixo a posição do cursor causa
+uma distorção do tipo fisheye na imagem, podendo facilitar a análise de bolhas que
+estavam muito próximas umas das outras ou parcialmente sobrepostas, sem perder
+informação do contexto geral (diferente de um zoom). Na primeira imagem podemos,
+por exemplo observar que o grupo de "Bases de Dados e Imagens" é mais próximo do
+grupo de "Inteligência Artificial (Computação Bioinspirada)" do que de "Sistemas
+Embarcados e Evolutivos". Isso tudo sem perder a informação do posiocinamento
+global, já que com um zoom provavelmente as bolhas de outras macros sairiam da
+tela, impedindo de verificar, por exemplo, que "Modelos de Variáveis Latentes
+(Estatística)" apresenta uma distância para "Bases de Dados e Imagens (Computação)"
+similar a de "Engenharia de Software e Sistemas de Informação (Computação)".
+
+![Fisheye](imgs/bubble_plot_fisheye.png)
+
+> Visualização do gráfico de bolhas com fisheye ao redor do cursor
+
+![Sem Fisheye](imgs/bubble_plot.png)
+
+> Visualização do gráfico de bolhas sem fisheye
 
 ### Gráfico de linhas
 
