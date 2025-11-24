@@ -45,6 +45,16 @@ def create_integrated_dashboard(
         Integrated Dash application
     """
 
+    # Define categorical color palette for line graph and labels
+    categorical_colors = [
+        "#1192e8",
+        "#fa4d56",
+        "#002d9c",
+        "#009d9a",
+        "#a56eff",
+        "#ee538b",
+    ]
+
     # Prepare collaboration data for arc diagram
     collab_data: pd.DataFrame = (
         collab_df.groupby(["researcher_1", "researcher_2"])
@@ -60,7 +70,6 @@ def create_integrated_dashboard(
     # Prepare article productivity data for the line graph
     article_data = []
     for researcher in researchers:
-        # Filter rows where type is 'artigo' and label appears in researcher_1 or researcher_2
         filtered_df = collab_df[
             (collab_df["type"] == "artigo")
             & (
@@ -83,7 +92,7 @@ def create_integrated_dashboard(
     article_df = pd.DataFrame(article_data)
 
     # Create mapping from researcher name to matrix index
-    researcher_to_index = {name: idx for idx, name in enumerate(researchers)}
+    researcher_to_index = {name: i for i, name in enumerate(researchers)}
 
     # Create empty square matrix
     n = len(researchers)
@@ -139,7 +148,7 @@ def create_integrated_dashboard(
                         options=researchers,
                         value=[],
                         multi=True,
-                        placeholder="Selecione um ou mais pesquisadores",
+                        placeholder=f"Selecione até {len(categorical_colors)} pesquisadores",
                     ),
                 ],
                 style={"marginBottom": "20px"},
@@ -223,16 +232,46 @@ def create_integrated_dashboard(
                 f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},{opacity})"
             )
 
+        # Update x-axis labels to highlight selected researchers
+        # Get the color mapping from line graph
+        line_fig = update_line_graph(dropdown_selection)
+        researcher_colors = {}
+        for trace in line_fig.data:
+            if trace.name in dropdown_selection:
+                researcher_colors[trace.name] = (
+                    trace.marker.color
+                    if hasattr(trace.marker, "color")
+                    else trace.line.color
+                )
+
+        # Update x-axis tick labels with colors for selected researchers
+        ticktext = []
+        for label in labels:
+            if label in dropdown_selection and label in researcher_colors:
+                # Apply color to selected researcher label
+                color = researcher_colors[label]
+                ticktext.append(
+                    f'<span style="color: {color}; font-weight: bold">{label}</span>'
+                )
+            else:
+                ticktext.append(label)
+
+        updated_fig.update_layout(
+            xaxis=dict(
+                tickmode="array", tickvals=list(range(len(labels))), ticktext=ticktext
+            )
+        )
+
         return updated_fig
 
     @app.callback(
         Output("line-graph", "figure"), [Input("researcher-dropdown", "value")]
     )
-    def update_line_graph(labels: list[str]):
+    def update_line_graph(researchers: list[str]):
         """
         Update line graph based on selected researchers.
         """
-        if not labels:
+        if not researchers:
             return go.Figure().update_layout(
                 title={
                     "text": "Selecione pelo menos um pesquisador",
@@ -319,7 +358,7 @@ def create_integrated_dashboard(
 
         minx = 10000
         maxx = 0
-        for researcher in labels:
+        for researcher in researchers:
             sub = df_show[df_show["researcher"] == researcher].sort_values("year")
             if sub.empty:
                 continue
