@@ -54,56 +54,57 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
 
     # usa layout flex para evitar sobreposicao e permitir rolagem horizontal no diagrama de arcos
     app.layout = html.Div([
-        html.H2('Diagrama de Arcos  ←→  Gráfico de Linhas (sincronizados)'),
-        dcc.Store(id='selected-researchers', data=[]),
-        html.Div([
-            html.Div([
-                html.H3('Diagrama de Arcos'),
-                # mantem o diagrama de arcos rolavel horizontalmente para evitar sobreposicao
-                html.Div(
-                    dcc.Graph(
-                        id='arc-diagram',
-                        figure=fig_arc,
-                        config={'displayModeBar': True},
-                        style={'width': '100%', 'height': '700px'}
-                    ),
-                    style={
-                        'overflowX': 'auto',
-                        'padding': '8px',
-                        'border': '1px solid #ddd',
-                        'borderRadius': '4px',
-                        'backgroundColor': '#fff',
-                        'height': '720px'
-                    }
-                ),
-                # area para mostrar detalhes do pesquisador clicado
-                html.Div(
-                    id='hover-info',
-                    style={
-                        'marginTop': '12px',
-                        'padding': '8px',
-                        'border': '1px solid #eee',
-                        'maxHeight': '300px',
-                        'overflowY': 'auto'
-                    }
-                ),
-            ], style={'flex': '1 1 48%', 'minWidth': '400px', 'marginRight': '10px'}),
 
-            html.Div([
-                html.H3('Gráfico de Linhas'),
-                html.Label('Selecione um ou mais pesquisadores (ou clique no diagrama):'),
-                dcc.Dropdown(
-                    id='researcher-dropdown',
-                    options=[{'label': str(p), 'value': p} for p in sorted(df['researcher_name'].unique())],
-                    value=[],
-                    multi=True,
-                    style={'width': '100%'}
+        html.H2('Diagrama de Arcos  e  Gráfico de Linhas — Linking'),
+        dcc.Store(id='selected-researchers', data=[]),
+
+        # grafico de linhas
+        html.Div([
+            html.H3('Grafico de linhas'),
+            html.Label('selecione um ou mais pesquisadores (ou clique no diagrama):'),
+            dcc.Dropdown(
+                id='researcher-dropdown',
+                options=[{'label': str(p), 'value': p} for p in sorted(df['researcher_name'].unique())],
+                value=[],
+                multi=True,
+                style={'width': '100%'}
+            ),
+            dcc.Graph(id='grafico-linhas', style={'width': '100%', 'height': '700px'}),
+        ], style={'width': '100%', 'marginBottom': '40px'}),
+
+        # diagrama de arcos 
+        html.Div([
+            html.H3('Diagrama de Arcos'),
+            html.Div(
+                dcc.Graph(
+                    id='arc-diagram',
+                    figure=fig_arc,
+                    config={'displayModeBar': True},
+                    style={'width': '100%', 'height': '700px'}
                 ),
-                dcc.Graph(id='grafico-linhas', style={'width': '100%', 'height': '700px'}),
-            ], style={'flex': '1 1 48%', 'minWidth': '420px'}),
-        ], style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'flex-start'}),
-        html.Div(id='debug', style={'display': 'none'})
-    ])
+                style={
+                    'overflowX': 'auto',
+                    'padding': '8px',
+                    'border': '1px solid #ddd',
+                    'borderRadius': '4px',
+                    'backgroundColor': '#fff',
+                    'height': '720px'
+                }
+            ),
+        ], style={'width': '100%', 'marginBottom': '40px'}),
+
+        # painel de informacoes
+        html.Div(
+            id='hover-info',
+            style={
+                'marginTop': '12px',
+                'padding': '8px',
+                'border': '1px solid #eee',
+                'maxHeight': '400px',
+                'overflowY': 'auto'
+            }
+        ),
+    ], style={'width': '100%', 'display': 'block'})
 
     # callback unificada: atualiza o store tanto pelo clique no diagrama quanto pelo dropdown
     @app.callback(
