@@ -53,19 +53,19 @@ def create_integrated_dashboard(
     )
 
     # Get all unique researchers
-    labels = sorted(
+    researchers = sorted(
         set(collab_data["researcher_1"]).union(set(collab_data["researcher_2"]))
     )
 
     # Prepare article productivity data for the line graph
     article_data = []
-    for label in labels:
+    for researcher in researchers:
         # Filter rows where type is 'artigo' and label appears in researcher_1 or researcher_2
         filtered_df = collab_df[
             (collab_df["type"] == "artigo")
             & (
-                (collab_df["researcher_1"] == label)
-                | (collab_df["researcher_2"] == label)
+                (collab_df["researcher_1"] == researcher)
+                | (collab_df["researcher_2"] == researcher)
             )
         ]
 
@@ -73,7 +73,7 @@ def create_integrated_dashboard(
         for _, row in filtered_df.iterrows():
             article_data.append(
                 {
-                    "researcher": label,
+                    "researcher": researcher,
                     "article": row["collaboration"],
                     "year": row["start"],
                 }
@@ -83,10 +83,10 @@ def create_integrated_dashboard(
     article_df = pd.DataFrame(article_data)
 
     # Create mapping from researcher name to matrix index
-    researcher_to_index = {name: idx for idx, name in enumerate(labels)}
+    researcher_to_index = {name: idx for idx, name in enumerate(researchers)}
 
     # Create empty square matrix
-    n = len(labels)
+    n = len(researchers)
     matrix = np.zeros((n, n), dtype=int)
 
     # Populate matrix with collaboration values
@@ -98,7 +98,7 @@ def create_integrated_dashboard(
     color_palette = validate_colors(color_palette)
 
     # Sort data for optimal display
-    matrix, labels = spectral_order(matrix, labels)
+    matrix, labels = spectral_order(matrix, researchers)
 
     # Create the initial arc diagram figure
     fig, arc_trace_indexes, dot_trace_indexes = arc_diagram(
@@ -136,7 +136,7 @@ def create_integrated_dashboard(
                 [
                     dcc.Dropdown(
                         id="researcher-dropdown",
-                        options=[{"label": label, "value": label} for label in labels],
+                        options=researchers,
                         value=[],
                         multi=True,
                         placeholder="Selecione um ou mais pesquisadores",
