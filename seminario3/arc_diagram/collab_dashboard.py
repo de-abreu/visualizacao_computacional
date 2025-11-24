@@ -1,5 +1,5 @@
 """
-Dash App for Interactive Arc Diagram with Hover-based Opacity Filtering
+Dash App for Interactive Arc Diagram with selection-based Opacity Filtering
 
 This module provides a Dash application that creates an interactive arc diagram
 for visualizing collaborations between researchers. The diagram supports hover-based
@@ -123,22 +123,34 @@ def create_collab_dashboard(
         },
     )
 
-    @app.callback(Output("arc-diagram", "figure"), Input("arc-diagram", "hoverData"))
-    def update_opacity_on_hover(hover_data):
-        """
-        Update dot and arc opacity based on hover interactions.
-        When hovering over a dot, reduce opacity of unrelated dots and arcs to 10%.
-        """
+    # Track selected researcher
+    selected_index = None
 
-        # If no hover data, return the original figure with full opacity
-        if hover_data is None:
+    @app.callback(Output("arc-diagram", "figure"), Input("arc-diagram", "clickData"))
+    def update_opacity_on_click(click_data):
+        """
+        Update dot and arc opacity based on click interactions.
+        When clicking on a dot, reduce opacity of unrelated dots and arcs to 10%.
+        Clicking again on the same dot deselects it.
+        """
+        nonlocal selected_index
+
+        # If no click data or clicking on the same dot, deselect
+        print(click_data)
+        if click_data is None or (
+            selected_index is not None
+            and click_data["points"][0]["customdata"] == selected_index
+        ):
+            print(selected_index)
+            selected_index = None
             return Figure(original_fig)
 
-        # Find dots related to the hovered dot (non-zero values in the row)
-        hovered_index = hover_data["points"][0]["customdata"]
+        # Find dots related to the clicked dot (non-zero values in the row)
+        clicked_index = click_data["points"][0]["customdata"]
+        selected_index = clicked_index
         related_indices = []
         for j in range(n):
-            if matrix_list[hovered_index][j] > 0:
+            if matrix_list[clicked_index][j] > 0:
                 related_indices.append(j)
 
         # Create updated figure with modified opacity
@@ -149,8 +161,8 @@ def create_collab_dashboard(
             trace = updated_fig.data[trace_idx]
             dot_index = trace.customdata[0]  # Extract the integer from the tuple
 
-            # Keep hovered dot and related dots at full opacity
-            if dot_index == hovered_index or dot_index in related_indices:
+            # Keep clicked dot and related dots at full opacity
+            if dot_index == clicked_index or dot_index in related_indices:
                 trace.marker.opacity = 1.0
             else:
                 trace.marker.opacity = 0.1
@@ -161,32 +173,32 @@ def create_collab_dashboard(
             connected_dots = trace.customdata[0]  # [i, j] array
             color = trace.line.color
             rgb_values = color[5:-1].split(",")[:3]
-            opacity = 1.0 if hovered_index in connected_dots else 0.1
+            opacity = 1.0 if clicked_index in connected_dots else 0.1
             trace.line.color = (
                 f"rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},{opacity})"
             )
 
         return updated_fig
 
-    @app.callback(Output("hover-info", "children"), Input("arc-diagram", "hoverData"))
-    def display_hover_info(hover_data):
-        """Display detailed information about the hovered researcher and their collaborations."""
-        if hover_data is None:
-            return "Passe o mouse sobre um ponto para ver as colaborações"
+    @app.callback(Output("hover-info", "children"), Input("arc-diagram", "clickData"))
+    def display_click_info(click_data):
+        """Display detailed information about the clicked researcher and their collaborations."""
+        if click_data is None:
+            return "Clique em um ponto para ver as colaborações"
 
         try:
-            hovered_index = hover_data["points"][0]["customdata"]
-            hovered_label = (
-                labels[hovered_index] if labels else f"Node {hovered_index + 1}"
+            clicked_index = click_data["points"][0]["customdata"]
+            clicked_label = (
+                labels[clicked_index] if labels else f"Node {clicked_index + 1}"
             )
 
             # Count total collaborations (sum of all connections for this researcher)
-            total_collaborations = sum(matrix_list[hovered_index])
+            total_collaborations = sum(matrix_list[clicked_index])
 
             # Get all collaborations for this researcher from the original dataframe
             researcher_collabs = collab_df[
-                (collab_df["researcher_1"] == hovered_label)
-                | (collab_df["researcher_2"] == hovered_label)
+                (collab_df["researcher_1"] == clicked_label)
+                | (collab_df["researcher_2"] == clicked_label)
             ].copy()
 
             # Sort by start date
@@ -198,7 +210,7 @@ def create_collab_dashboard(
                 # Determine the collaborator name (the other researcher)
                 collaborator = (
                     collab["researcher_2"]
-                    if collab["researcher_1"] == hovered_label
+                    if collab["researcher_1"] == clicked_label
                     else collab["researcher_1"]
                 )
                 collab_type = collab["type"]
@@ -219,7 +231,7 @@ def create_collab_dashboard(
 
             return html.Div(
                 [
-                    html.H4(f"Pesquisador: {hovered_label}"),
+                    html.H4(f"Pesquisador: {clicked_label}"),
                     html.P(f"Total de colaborações: {total_collaborations}"),
                     html.H5("Detalhes das Colaborações:"),
                     html.Table(
@@ -250,6 +262,6 @@ def create_collab_dashboard(
             )
 
         except (KeyError, IndexError, TypeError):
-            return "Passe o mouse sobre um ponto para ver as colaborações"
+            return "Clique em um ponto para ver as colaborações"
 
     return app
