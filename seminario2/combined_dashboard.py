@@ -12,17 +12,17 @@ from line_graph.data import get_data
 
 
 def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_counts: pd.DataFrame):
-    """Create a combined Dash app with Arc Diagram and Line Graph synchronized in real-time.
+    """cria um dashboard combinado do dash com diagrama de arcos e grafico de linhas sincronizados em tempo real.
 
-    Behavior:
-    - Clicking a node in the arc diagram toggles that researcher in the selected set.
-    - The line graph shows all selected researchers simultaneously.
-    - Selecting/deselecting researchers via the line-graph dropdown also updates the arc diagram.
+    comportamento:
+    - ao clicar em um no no diagrama de arcos, alterna o pesquisador no conjunto selecionado.
+    - o grafico de linhas mostra todos os pesquisadores selecionados ao mesmo tempo.
+    - selecionar ou desselecionar pesquisadores pelo dropdown do grafico tambem atualiza o diagrama de arcos.
     """
 
-    # Prepare arc diagram data (reuse logic from collab_dashboard)
+    # prepara dados para o diagrama de arcos (reutiliza logica do collab_dashboard)
     collab_graph = (
-        collab_df.groupby(["researcher_1", "researcher_2"]) .size().reset_index(name="collaborations")
+        collab_df.groupby(["researcher_1", "researcher_2"]).size().reset_index(name="collaborations")
     )
 
     labels = sorted(
@@ -49,24 +49,44 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
     arc_traces = list(range(arc_start, arc_end + 1))
     dot_traces = list(range(dot_start, dot_end + 1))
 
-    # Build Dash app
+    # cria app dash
     app = dash.Dash(__name__)
 
-    # Use flex layout to avoid overlap and allow scrollable arc diagram
+    # usa layout flex para evitar sobreposicao e permitir rolagem horizontal no diagrama de arcos
     app.layout = html.Div([
         html.H2('Diagrama de Arcos  ←→  Gráfico de Linhas (sincronizados)'),
         dcc.Store(id='selected-researchers', data=[]),
         html.Div([
             html.Div([
                 html.H3('Diagrama de Arcos'),
-                # keep the arc diagram scrollable horizontally to avoid overlap
+                # mantem o diagrama de arcos rolavel horizontalmente para evitar sobreposicao
                 html.Div(
-                    dcc.Graph(id='arc-diagram', figure=fig_arc, config={'displayModeBar': True},
-                              style={'width': '100%', 'height': '700px'}),
-                    style={'overflowX': 'auto', 'padding': '8px', 'border': '1px solid #ddd', 'borderRadius': '4px', 'backgroundColor': '#fff', 'height': '720px'}
+                    dcc.Graph(
+                        id='arc-diagram',
+                        figure=fig_arc,
+                        config={'displayModeBar': True},
+                        style={'width': '100%', 'height': '700px'}
+                    ),
+                    style={
+                        'overflowX': 'auto',
+                        'padding': '8px',
+                        'border': '1px solid #ddd',
+                        'borderRadius': '4px',
+                        'backgroundColor': '#fff',
+                        'height': '720px'
+                    }
                 ),
-                # area to display clicked researcher details
-                html.Div(id='hover-info', style={'marginTop': '12px', 'padding': '8px', 'border': '1px solid #eee', 'maxHeight':'300px', 'overflowY':'auto'}),
+                # area para mostrar detalhes do pesquisador clicado
+                html.Div(
+                    id='hover-info',
+                    style={
+                        'marginTop': '12px',
+                        'padding': '8px',
+                        'border': '1px solid #eee',
+                        'maxHeight': '300px',
+                        'overflowY': 'auto'
+                    }
+                ),
             ], style={'flex': '1 1 48%', 'minWidth': '400px', 'marginRight': '10px'}),
 
             html.Div([
@@ -85,7 +105,7 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
         html.Div(id='debug', style={'display': 'none'})
     ])
 
-    # Unified callback: update store either from arc click (toggle) or from dropdown selection
+    # callback unificada: atualiza o store tanto pelo clique no diagrama quanto pelo dropdown
     @app.callback(
         Output('selected-researchers', 'data'),
         Input('arc-diagram', 'clickData'),
@@ -98,23 +118,22 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
             return dash.no_update
         trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
         current_selected = current_selected or []
-        # Dropdown triggered: set store to dropdown value (explicit selection)
+        # se o trigger veio do dropdown, o store passa a refletir exatamente o valor do dropdown
         if trigger_id == 'researcher-dropdown':
             return dropdown_value or []
 
-        # Arc diagram clicked: toggle the clicked researcher in the store
+        # se o trigger veio do diagrama de arcos, alterna o pesquisador clicado no store
         if trigger_id == 'arc-diagram':
             if not clickData:
                 return dash.no_update
-            try:
-                pt = clickData['points'][0]
-                custom = pt.get('customdata')
-                if isinstance(custom, (list, tuple)):
-                    idx = int(custom[0])
-                else:
-                    idx = int(custom)
-            except Exception:
-                idx = None
+
+            pt = clickData['points'][0]
+            custom = pt.get('customdata')
+            if isinstance(custom, (list, tuple)):
+                idx = int(custom[0])
+            else:
+                idx = int(custom)
+
             name = None
             if idx is not None and 0 <= idx < len(labels):
                 name = labels[idx]
@@ -128,7 +147,7 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
                 return current_selected + [name]
         return dash.no_update
 
-    # Update dropdown when store changes (keeps them synced)
+    # callback que mantem o dropdown sincronizado com o store
     @app.callback(
         Output('researcher-dropdown', 'value'),
         Input('selected-researchers', 'data')
@@ -136,7 +155,7 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
     def store_to_dropdown(selected):
         return selected or []
 
-    # Update line graph when selection changes
+    # callback que atualiza o grafico de linhas quando a selecao muda
     @app.callback(
         Output('grafico-linhas', 'figure'),
         Input('selected-researchers', 'data')
@@ -144,52 +163,54 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
     def update_line_graph(selected):
         if not selected:
             return go.Figure().update_layout(
-                title={'text': 'Selecione ao menos um pesquisador', 'y':0.9, 'x':0.5, 'xanchor':'center'}
+                title={'text': 'Selecione ao menos um pesquisador', 'y': 0.9, 'x': 0.5, 'xanchor': 'center'}
             )
         researchers = selected
         df_show = df_counts[df_counts['researcher_name'].isin(researchers)].copy()
-        # reuse the line construction from existing dashboard
+
+        # reutiliza a construcao do grafico de linhas do dashboard existente
         blob_dic = {}
         position_setter = {}
         for i, (_, row) in enumerate(df_show.iterrows()):
             year = row['year']
             researcher = row['researcher_name']
-            position_setter[(researcher,year)] = i
+            position_setter[(researcher, year)] = i
             count = row['count_articles']
-            df_sel = df[(df['researcher_name']==researcher) & (df['article_year']==year)]
+            df_sel = df[(df['researcher_name'] == researcher) & (df['article_year'] == year)]
             blob_text = "<br>".join(df_sel['article_title'].tolist()) if not df_sel.empty else "Sem artigos"
-            key = (year,count)
-            value = (researcher,blob_text)
+            key = (year, count)
+            value = (researcher, blob_text)
             if key not in blob_dic:
                 blob_dic[key] = [value]
             else:
                 blob_dic[key].append(value)
-        blob_texts = ['']*len(df_show)
-        for key,value in blob_dic.items():
-            year,count = key
+
+        blob_texts = [''] * len(df_show)
+        for key, value in blob_dic.items():
+            year, count = key
             researchers_to_set = []
             blob_text = ''
-            if len(value)==1:
-                researcher,text = value[0]
+            if len(value) == 1:
+                researcher, text = value[0]
                 blob_text += text + "<br>"
                 researchers_to_set.append(researcher)
             else:
                 square_char = chr(9632)
-                for researcher,text in value:
-                    blob_text += '<b>' + researcher + '  ' + (square_char*(max(1,20-len(researcher)))) + '</b>' + "<br>"
+                for researcher, text in value:
+                    blob_text += '<b>' + researcher + '  ' + (square_char * (max(1, 20 - len(researcher)))) + '</b>' + "<br>"
                     blob_text += text + "<br><br>"
                     researchers_to_set.append(researcher)
             for researcher in researchers_to_set:
-                index = position_setter[(researcher,year)]
+                index = position_setter[(researcher, year)]
                 blob_texts[index] = blob_text
 
         df_show['blob_texts'] = blob_texts
         fig = go.Figure()
-        global_opacity = max(0.2, 1/max(1,len(researchers)))
+        global_opacity = max(0.2, 1 / max(1, len(researchers)))
         minx = 10000
         maxx = 0
         for researcher in researchers:
-            sub = df_show[df_show['researcher_name']==researcher].sort_values('year')
+            sub = df_show[df_show['researcher_name'] == researcher].sort_values('year')
             if sub.empty:
                 continue
             hover_texts = sub['blob_texts'].tolist()
@@ -204,12 +225,12 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
                 hovertemplate="<b>%{customdata}</b><extra></extra>",
                 opacity=1.0
             ))
-        xtick = 1 if abs(maxx-minx)<25 else 2
+        xtick = 1 if abs(maxx - minx) < 25 else 2
         fig.update_layout(
-            xaxis = dict(tickmode = 'linear',dtick = xtick),
-            yaxis = dict(tickmode = 'linear',dtick = 1),
+            xaxis=dict(tickmode='linear', dtick=xtick),
+            yaxis=dict(tickmode='linear', dtick=1),
             hovermode='closest',
-            title={'text': 'Artigos por pesquisador', 'y':0.9, 'x':0.5},
+            title={'text': 'Artigos por pesquisador', 'y': 0.9, 'x': 0.5},
             xaxis_title='Ano',
             yaxis_title='Número de Artigos',
             legend_title='pesquisador'
@@ -221,18 +242,17 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
         Input('arc-diagram', 'clickData')
     )
     def show_researcher_details(clickData):
-        # Show details only on click (no hover)
+        # mostra detalhes apenas no clique (sem hover)
         if not clickData:
             return 'Clique em uma bolinha no diagrama para ver colaborações e trabalhos.'
-        try:
-            pt = clickData['points'][0]
-            custom = pt.get('customdata')
-            if isinstance(custom, (list, tuple)):
-                idx = int(custom[0])
-            else:
-                idx = int(custom)
-        except Exception:
-            idx = None
+
+        pt = clickData['points'][0]
+        custom = pt.get('customdata')
+        if isinstance(custom, (list, tuple)):
+            idx = int(custom[0])
+        else:
+            idx = int(custom)
+
         name = None
         if idx is not None and 0 <= idx < len(labels):
             name = labels[idx]
@@ -241,14 +261,16 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
         if not name:
             return 'Não foi possível identificar o pesquisador.'
 
-        # find collaborations for this researcher
-        researcher_collabs = collab_df[(collab_df['researcher_1'] == name) | (collab_df['researcher_2'] == name)].copy()
+        # encontra colaboracoes do pesquisador
+        researcher_collabs = collab_df[
+            (collab_df['researcher_1'] == name) | (collab_df['researcher_2'] == name)
+        ].copy()
         researcher_collabs = researcher_collabs.sort_values('start')
 
-        # total collaborations
+        # total de colaboracoes
         total_collaborations = len(researcher_collabs)
 
-        # list of articles from df
+        # lista de artigos do pesquisador
         df_articles = df[(df['researcher_name'] == name)].copy()
 
         rows = []
@@ -256,23 +278,42 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
             collaborator = collab['researcher_2'] if collab['researcher_1'] == name else collab['researcher_1']
             start = collab.get('start', '')
             end = collab.get('end', '')
-            rows.append(html.Tr([html.Td(collaborator), html.Td(collab.get('collaboration','')), html.Td(collab.get('type','')), html.Td(str(start)), html.Td(str(end))]))
+            rows.append(html.Tr([
+                html.Td(collaborator),
+                html.Td(collab.get('collaboration', '')),
+                html.Td(collab.get('type', '')),
+                html.Td(str(start)),
+                html.Td(str(end))
+            ]))
 
-        articles_list = [html.Li(a) for a in df_articles['article_title'].tolist()] if not df_articles.empty else [html.Li('Sem artigos registrados')]
+        articles_list = [
+            html.Li(a) for a in df_articles['article_title'].tolist()
+        ] if not df_articles.empty else [html.Li('Sem artigos registrados')]
 
         return html.Div([
             html.H4(f'Pesquisador: {name}'),
             html.P(f'Total de colaborações: {total_collaborations}'),
             html.H5('Detalhes das Colaborações:'),
             html.Table([
-                html.Thead(html.Tr([html.Th('Colaborador', style={'textAlign':'left'}), html.Th('Título', style={'textAlign':'left'}), html.Th('Tipo', style={'textAlign':'left'}), html.Th('Início', style={'textAlign':'left'}), html.Th('Término', style={'textAlign':'left'})])),
+                html.Thead(html.Tr([
+                    html.Th('Colaborador', style={'textAlign': 'left'}),
+                    html.Th('Título', style={'textAlign': 'left'}),
+                    html.Th('Tipo', style={'textAlign': 'left'}),
+                    html.Th('Início', style={'textAlign': 'left'}),
+                    html.Th('Término', style={'textAlign': 'left'})
+                ])),
                 html.Tbody(rows)
-            ], style={'width':'100%', 'borderCollapse':'collapse', 'border':'1px solid #ddd', 'marginTop':'10px'}),
+            ], style={
+                'width': '100%',
+                'borderCollapse': 'collapse',
+                'border': '1px solid #ddd',
+                'marginTop': '10px'
+            }),
             html.H5('Artigos'),
             html.Ul(articles_list)
-        ], style={'padding':'6px'})
+        ], style={'padding': '6px'})
 
-    # Update arc diagram opacity to highlight selected researchers
+    # callback que atualiza o diagrama de arcos para destacar pesquisadores selecionados
     @app.callback(
         Output('arc-diagram', 'figure'),
         Input('selected-researchers', 'data')
@@ -280,67 +321,57 @@ def create_combined_dashboard(collab_df: pd.DataFrame, df: pd.DataFrame, df_coun
     def update_arc_on_selection(selected):
         selected = selected or []
         updated = Figure(fig_arc)
-        # Build set of selected indices
+
+        # constroi conjunto de indices selecionados
         sel_indices = set()
         label_to_idx = {lbl: i for i, lbl in enumerate(labels)}
         for s in selected:
             if s in label_to_idx:
                 sel_indices.add(label_to_idx[s])
-        # Build neighbors set: nodes directly connected to any selected researcher
+
+        # constroi conjunto de vizinhos: nos diretamente conectados a qualquer pesquisador selecionado
         neighbors = set()
         if sel_indices:
             for si in sel_indices:
-                try:
-                    connected_row = matrix[si]
-                    for j, val in enumerate(connected_row):
-                        if val and j != si:
-                            neighbors.add(j)
-                except Exception:
-                    # if matrix isn't indexable as expected, skip
-                    pass
+                connected_row = matrix[si]
+                for j, val in enumerate(connected_row):
+                    if val and j != si:
+                        neighbors.add(j)
 
-        # Update dots: selected -> 1.0, neighbors -> 0.65, others -> 0.1 (when any selection exists)
+        # atualiza opacidade dos nos: selecionados, vizinhos e demais
         for trace_idx in dot_traces:
             trace = updated.data[trace_idx]
-            try:
-                dot_index = int(trace.customdata[0])
-            except Exception:
-                dot_index = None
-            if dot_index is not None:
-                if dot_index in sel_indices:
-                    trace.marker.opacity = 1.0
-                elif dot_index in neighbors and sel_indices:
-                    trace.marker.opacity = 0.65
-                else:
-                    trace.marker.opacity = 0.1 if sel_indices else 1.0
-        # Update arcs opacity
+            dot_index = int(trace.customdata[0])
+            if dot_index in sel_indices:
+                trace.marker.opacity = 1.0
+            elif dot_index in neighbors and sel_indices:
+                trace.marker.opacity = 0.65
+            else:
+                trace.marker.opacity = 0.1 if sel_indices else 1.0
+
+        # atualiza opacidade das arestas conforme selecao
         for trace_idx in arc_traces:
             trace = updated.data[trace_idx]
-            try:
-                connected = trace.customdata[0]
-                opacity = 1.0 if any(idx in sel_indices for idx in connected) else (0.1 if sel_indices else 1.0)
-                color = trace.line.color
-                # try to preserve rgb and set alpha
-                if isinstance(color, str) and color.startswith('rgb'):
-                    rgb_values = color[color.find('(')+1:color.find(')')].split(',')[:3]
-                    trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},{opacity})'
-                else:
-                    trace.line.color = trace.line.color
-            except Exception:
-                pass
+            connected = trace.customdata[0]
+            opacity = 1.0 if any(idx in sel_indices for idx in connected) else (0.1 if sel_indices else 1.0)
+            color = trace.line.color
+            # tenta preservar rgb e apenas ajustar alpha
+            if isinstance(color, str) and color.startswith('rgb'):
+                rgb_values = color[color.find('(') + 1:color.find(')')].split(',')[:3]
+                trace.line.color = f'rgba({rgb_values[0]},{rgb_values[1]},{rgb_values[2]},{opacity})'
+            else:
+                trace.line.color = trace.line.color
+
         return updated
 
     return app
 
 
 if __name__ == '__main__':
-    # quick runner for convenience (assumes running from repo root and database available)
-    try:
-        engine_df, engine_counts = get_data()
-    except Exception:
-        # try import from module returns full df
-        df, df_counts = get_data()
-    # load collaborations from DB (user can replace with their df)
+    # runner simples para conveniencia (assume execucao a partir da raiz do repositorio e banco disponivel)
+    df, df_counts = get_data()
+
+    # carrega colabores do banco (usuario pode substituir por seu proprio dataframe)
     import sqlite3
     conn = sqlite3.connect('database/lattes.db')
     collaborations_query = """
