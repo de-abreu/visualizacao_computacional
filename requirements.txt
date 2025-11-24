@@ -15,7 +15,7 @@ pandas-stubs==2.2.2.240807
 seaborn==0.13.2
 tqdm==4.67.1
 sentence_transformers==5.1.2
-umap-learn==0.5.9
+umap-learn==0.5.9.post2
 
 # Webscrapper
 attrs==25.4.0
