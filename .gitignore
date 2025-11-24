@@ -1,6 +1,6 @@
 .kaggle.json
 .ipynb_checkpoints/
-.pip-build/
+.build/
 .venv/
 **/venv/
 **/**cache**
